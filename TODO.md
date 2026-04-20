@@ -2,104 +2,114 @@
 
 ## 1. プロジェクトセットアップ
 
-- [ ] `bun init` + package.json 設定
-- [ ] TypeScript 設定 (tsconfig.json)
-- [ ] 依存インストール: zod, yaml, @anthropic-ai/sdk
-- [ ] Linter 設定 (oxlint)
-- [ ] ディレクトリ構造作成 (src/, tests/)
-- [ ] テスト環境セットアップ (bun test)
+- [x] `bun init` + package.json 設定
+- [x] TypeScript 設定 (tsconfig.json)
+- [x] 依存インストール: zod, yaml, @anthropic-ai/sdk
+- [x] Linter 設定 (oxlint)
+- [x] ディレクトリ構造作成 (src/, tests/)
+- [x] テスト環境セットアップ (bun test)
 
 ## 2. 型定義・インターフェース
 
-- [ ] リソース型定義 (ResourceType, Operation, Plan)
-- [ ] FileSystem インターフェース (src/fs/interface.ts)
-- [ ] ApiClient インターフェース (src/api/interface.ts)
-- [ ] State 型定義 (StateFile, ResourceEntry)
+- [x] リソース型定義 (ResourceType, Operation, Plan)
+- [x] FileSystem インターフェース (src/fs/interface.ts)
+- [x] ApiClient インターフェース (src/api/interface.ts)
+- [x] State 型定義 (StateFile, ResourceEntry)
 
 ## 3. Parse / Resolve Layer
 
-- [ ] Zod スキーマ定義 (src/parse/schema.ts)
-  - [ ] EnvironmentConfigSchema
-  - [ ] SkillConfigSchema
-  - [ ] AgentConfigSchema
-  - [ ] AgentformConfigSchema (トップレベル)
-- [ ] 式パーサー (src/parse/expression.ts)
-  - [ ] EXPR_PATTERN による式検出
-  - [ ] file 参照パース
-  - [ ] resource 参照パース
-  - [ ] 文字列中の複数式対応
-- [ ] YAML パーサー (src/parse/parser.ts)
-  - [ ] YAML 読み込み → Zod バリデーション
-  - [ ] 文字列値内の式をパースして Expr ノード生成
-- [ ] DAG 構築 (src/parse/dag.ts)
-  - [ ] リソース参照から依存エッジ抽出
-  - [ ] トポロジカルソート
-  - [ ] 循環依存検出
+- [x] Zod スキーマ定義 (src/parse/schema.ts)
+  - [x] EnvironmentConfigSchema
+  - [x] SkillConfigSchema
+  - [x] AgentConfigSchema
+  - [x] AgentformConfigSchema (トップレベル)
+- [x] 式パーサー (src/parse/expression.ts)
+  - [x] EXPR_PATTERN による式検出
+  - [x] file 参照パース
+  - [x] resource 参照パース
+  - [x] 文字列中の複数式対応
+- [x] YAML パーサー (src/parse/parser.ts)
+  - [x] YAML 読み込み → Zod バリデーション
+  - [x] 文字列値内の式をパースして Expr ノード生成
+- [x] DAG 構築 (src/parse/dag.ts)
+  - [x] リソース参照から依存エッジ抽出
+  - [x] トポロジカルソート
+  - [x] 循環依存検出
 
 ## 4. State 管理
 
-- [ ] State ファイル読み込み (src/state/store.ts)
-- [ ] State ファイル書き込み
-- [ ] リソースエントリの追加/更新/削除
+- [x] State ファイル読み込み (src/state/store.ts)
+- [x] State ファイル書き込み
+- [x] リソースエントリの追加/更新/削除
 
 ## 5. Execution Layer
 
-- [ ] ハッシュ計算 (src/execute/hash.ts)
-  - [ ] 設定値の正規化 (キーソート JSON)
-  - [ ] SHA-256 ハッシュ
-  - [ ] Skill ディレクトリのハッシュ (全ファイル)
-- [ ] Planner (src/execute/planner.ts)
-  - [ ] ${file(...)} 解決
-  - [ ] State との diff (ハッシュ比較)
-  - [ ] create Operation 導出 (State にない)
-  - [ ] update Operation 導出 (ハッシュ不一致)
-  - [ ] create_version Operation 導出 (Skill ファイル変更)
-  - [ ] destroy Operation 導出 (YAML にない)
+- [x] ハッシュ計算 (src/execute/hash.ts)
+  - [x] 設定値の正規化 (キーソート JSON)
+  - [x] SHA-256 ハッシュ
+  - [x] Skill ディレクトリのハッシュ (全ファイル)
+- [x] Planner (src/execute/planner.ts)
+  - [x] ${file(...)} 解決
+  - [x] State との diff (ハッシュ比較)
+  - [x] create Operation 導出 (State にない)
+  - [x] update Operation 導出 (ハッシュ不一致)
+  - [x] create_version Operation 導出 (Skill ファイル変更)
+  - [x] destroy Operation 導出 (YAML にない)
   - [ ] Skill display_title 変更 → destroy + create
 
 ## 6. Apply Layer
 
-- [ ] Applier (src/apply/applier.ts)
-  - [ ] Operation のトポロジカル順実行
-  - [ ] ${resource...} の逐次解決
-  - [ ] Environment create/update/archive
-  - [ ] Skill create/createVersion/delete
-  - [ ] Agent create/update/archive (version 付き)
-  - [ ] State 更新 (各 Operation 完了ごと)
-  - [ ] Partial apply (失敗時に成功分を保存)
+- [x] Applier (src/apply/applier.ts)
+  - [x] Operation のトポロジカル順実行
+  - [x] ${resource...} の逐次解決
+  - [x] Environment create/update/archive
+  - [x] Skill create/createVersion/delete
+  - [x] Agent create/update/archive (version 付き)
+  - [x] State 更新 (各 Operation 完了ごと)
+  - [x] Partial apply (失敗時に成功分を保存)
 
 ## 7. ApiClient 実装
 
-- [ ] Anthropic SDK ラッパー (src/api/sdk-client.ts)
-  - [ ] Environment API (create, update, archive)
-  - [ ] Skill API (create, createVersion, delete)
-  - [ ] Agent API (create, update, archive)
-  - [ ] リトライ (429, 5xx)
+- [x] Anthropic SDK ラッパー (src/api/sdk-client.ts)
+  - [x] Environment API (create, update, archive)
+  - [x] Skill API (create, createVersion, delete)
+  - [x] Agent API (create, update, archive)
+  - [x] リトライ (429, 5xx)
 
 ## 8. CLI
 
-- [ ] エントリーポイント (src/index.ts)
-- [ ] `plan` コマンド
-  - [ ] YAML 読み込み → Parse → Execution → Plan 表示
-  - [ ] 差分フォーマット出力 (+, ~, ^, -)
-- [ ] `apply` コマンド
-  - [ ] plan 表示 → 確認プロンプト → Apply 実行
-- [ ] `destroy` コマンド
-  - [ ] State 読み込み → 逆順で全リソース削除
-- [ ] `state` コマンド
-  - [ ] State ファイル表示
+- [x] エントリーポイント (src/index.ts)
+- [x] `plan` コマンド
+  - [x] YAML 読み込み → Parse → Execution → Plan 表示
+  - [x] 差分フォーマット出力 (+, ~, ^, -)
+- [x] `apply` コマンド
+  - [x] plan 表示 → 確認プロンプト → Apply 実行
+- [x] `destroy` コマンド
+  - [x] State 読み込み → 逆順で全リソース削除
+- [x] `state` コマンド
+  - [x] State ファイル表示
 
 ## 9. テスト
 
-- [ ] Parse Layer テスト
-  - [ ] スキーマバリデーション (P-1 ~ P-8)
-  - [ ] 式パース (E-1 ~ E-6)
-  - [ ] DAG (D-1 ~ D-4)
-- [ ] Execution Layer テスト (mock FileSystem)
-  - [ ] Plan 生成 (X-1 ~ X-7)
-  - [ ] ハッシュ計算 (H-1 ~ H-4)
-  - [ ] ファイル解決 (F-1 ~ F-3)
-- [ ] Apply Layer テスト (mock ApiClient)
-  - [ ] API 呼び出し (A-1 ~ A-8)
-  - [ ] 参照解決 (R-1 ~ R-3)
-  - [ ] State 更新 (S-1 ~ S-5)
+- [x] Parse Layer テスト
+  - [x] スキーマバリデーション (P-1 ~ P-8)
+  - [x] 式パース (E-1 ~ E-6)
+  - [x] DAG (D-1 ~ D-4)
+- [x] Execution Layer テスト (mock FileSystem)
+  - [x] Plan 生成 (X-1 ~ X-4, X-6, X-7)
+  - [x] ハッシュ計算 (H-1 ~ H-4)
+  - [x] ファイル解決 (F-1 ~ F-3)
+- [x] Apply Layer テスト (mock ApiClient)
+  - [x] API 呼び出し (A-1, A-3 ~ A-6, A-8)
+  - [x] 参照解決 (R-2 ~ R-3)
+  - [x] State 更新 (S-1, S-3 ~ S-5)
+
+## 10. 残タスク
+
+- [ ] X-5: Skill display_title 変更テスト追加
+- [ ] A-2: Environment update テスト追加
+- [ ] A-7: Agent update テスト追加
+- [ ] R-1: 既存リソース参照テスト追加
+- [ ] S-2: Agent update 時の version increment テスト追加
+- [ ] E2E シナリオテスト (S-1 ~ S-7)
+- [ ] リトライテスト (RT-1 ~ RT-3)
