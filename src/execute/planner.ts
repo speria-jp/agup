@@ -67,9 +67,9 @@ export async function generatePlan(
           },
         });
       } else {
-        const oldTitle =
-          (resolvedConfigs.get(key) as Record<string, unknown> | undefined)?.display_title;
-        const titleChanged = oldTitle !== undefined && oldTitle !== skillConfig.display_title;
+        const oldTitle = (existing as { display_title?: string }).display_title;
+        const newTitle = skillConfig.display_title;
+        const titleChanged = oldTitle !== newTitle;
 
         if (titleChanged) {
           operations.push({
@@ -242,24 +242,40 @@ function setNestedValue(obj: Record<string, unknown>, path: string, value: unkno
 }
 
 function sortOperations(operations: Operation[], dagOrder: string[]): Operation[] {
-  const destroyOps = operations.filter((op) => op.type === "destroy");
+  const createKeys = new Set(
+    operations.filter((op) => op.type === "create").map((op) => `${op.resource}.${op.name}`),
+  );
+
+  const isRecreateDestroy = (op: Operation) =>
+    op.type === "destroy" && createKeys.has(`${op.resource}.${op.name}`);
+
+  const pureDestroys = operations.filter((op) => op.type === "destroy" && !isRecreateDestroy(op));
   const nonDestroyOps = operations.filter((op) => op.type !== "destroy");
+  const recreateDestroyMap = new Map(
+    operations.filter(isRecreateDestroy).map((op) => [`${op.resource}.${op.name}`, op]),
+  );
 
   nonDestroyOps.sort((a, b) => {
-    const aKey = `${a.resource}.${a.name}`;
-    const bKey = `${b.resource}.${b.name}`;
-    const aIdx = dagOrder.indexOf(aKey);
-    const bIdx = dagOrder.indexOf(bKey);
+    const aIdx = dagOrder.indexOf(`${a.resource}.${a.name}`);
+    const bIdx = dagOrder.indexOf(`${b.resource}.${b.name}`);
     return aIdx - bIdx;
   });
 
-  destroyOps.sort((a, b) => {
-    const aKey = `${a.resource}.${a.name}`;
-    const bKey = `${b.resource}.${b.name}`;
-    const aIdx = dagOrder.indexOf(aKey);
-    const bIdx = dagOrder.indexOf(bKey);
+  pureDestroys.sort((a, b) => {
+    const aIdx = dagOrder.indexOf(`${a.resource}.${a.name}`);
+    const bIdx = dagOrder.indexOf(`${b.resource}.${b.name}`);
     return bIdx - aIdx;
   });
 
-  return [...nonDestroyOps, ...destroyOps];
+  const result: Operation[] = [];
+  for (const op of nonDestroyOps) {
+    const key = `${op.resource}.${op.name}`;
+    const destroy = recreateDestroyMap.get(key);
+    if (op.type === "create" && destroy) {
+      result.push(destroy);
+    }
+    result.push(op);
+  }
+  result.push(...pureDestroys);
+  return result;
 }

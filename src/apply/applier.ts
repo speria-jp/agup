@@ -1,6 +1,7 @@
 import type { ApiClient } from "../api/interface.ts";
 import type { Operation, Plan, StateFile, ResourceEntry, SkillEntry, AgentEntry } from "../types.ts";
 import { setEntry, removeEntry } from "../state/store.ts";
+import { computeHash } from "../execute/hash.ts";
 
 export interface ApplyResult {
   state: StateFile;
@@ -44,7 +45,7 @@ async function applyOperation(
 
   switch (operation.type) {
     case "create": {
-      const entry = await createResource(operation.resource, params, apiClient);
+      const entry = await createResource(operation.resource, operation.name, params, apiClient);
       return setEntry(state, key, entry);
     }
     case "update": {
@@ -57,7 +58,7 @@ async function applyOperation(
       const updated: SkillEntry = {
         ...existing,
         latest_version: result.version_id,
-        last_applied_hash: computeQuickHash(params),
+        last_applied_hash: computeHash(params),
       };
       return setEntry(state, key, updated);
     }
@@ -107,18 +108,19 @@ function deepResolveRefs(obj: unknown, state: StateFile): Record<string, unknown
 
 async function createResource(
   resource: string,
+  name: string,
   params: Record<string, unknown>,
   apiClient: ApiClient,
 ): Promise<ResourceEntry> {
   const now = new Date().toISOString();
-  const hash = computeQuickHash(params);
+  const hash = computeHash(params);
 
   switch (resource) {
     case "environment": {
       const result = await apiClient.environments.create(params);
       return {
         type: "environment",
-        logical_name: "",
+        logical_name: name,
         id: result.id,
         created_at: now,
         last_applied_hash: hash,
@@ -126,11 +128,13 @@ async function createResource(
     }
     case "skill": {
       const result = await apiClient.skills.create(params);
+      const displayTitle = (params.display_title as string | undefined) ?? undefined;
       return {
         type: "skill",
-        logical_name: "",
+        logical_name: name,
         id: result.id,
         latest_version: "",
+        display_title: displayTitle,
         created_at: now,
         last_applied_hash: hash,
       };
@@ -139,7 +143,7 @@ async function createResource(
       const result = await apiClient.agents.create(params);
       return {
         type: "agent",
-        logical_name: "",
+        logical_name: name,
         id: result.id,
         version: result.version,
         created_at: now,
@@ -160,7 +164,7 @@ async function updateResource(
 ): Promise<ResourceEntry> {
   const key = Object.keys(state.resources).find((k) => state.resources[k]!.id === id);
   const existing = key ? state.resources[key] : undefined;
-  const hash = computeQuickHash(params);
+  const hash = computeHash(params);
 
   switch (resource) {
     case "environment": {
@@ -202,8 +206,3 @@ async function destroyResource(
   }
 }
 
-function computeQuickHash(data: Record<string, unknown>): string {
-  const normalized = JSON.stringify(data);
-  const hash = new Bun.CryptoHasher("sha256").update(normalized).digest("hex");
-  return `sha256:${hash}`;
-}

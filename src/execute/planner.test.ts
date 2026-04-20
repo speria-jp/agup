@@ -211,6 +211,38 @@ agents:
     expect(plan.operations[0]!.resource).toBe("agent");
   });
 
+  test("X-5: skill display_title change generates destroy + create", async () => {
+    const config = parseYaml(`
+skills:
+  search:
+    display_title: New Title
+    directory: ./skills/search
+`);
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "skill.search": {
+          type: "skill",
+          logical_name: "search",
+          id: "skill_123",
+          latest_version: "v1",
+          display_title: "Old Title",
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:old_hash",
+        },
+      },
+    };
+
+    const plan = await generatePlan(config, state, {
+      basePath: "/project",
+      fs: mockFs(),
+    });
+
+    expect(plan.operations.length).toBe(2);
+    expect(plan.operations[0]!.type).toBe("destroy");
+    expect(plan.operations[1]!.type).toBe("create");
+  });
+
   test("F-2: file not found throws error", async () => {
     const config = parseYaml(`
 agents:

@@ -14,21 +14,21 @@
 
 ## 1. Bugs / 仕様不整合
 
-### 1.1 [HIGH] `computeQuickHash` と `computeHash` の不一致
+### 1.1 [HIGH] ~~`computeQuickHash` と `computeHash` の不一致~~ ✅ Fixed
 
 - **場所**: `src/apply/applier.ts:205-209` vs `src/execute/hash.ts:3-7`
 - **問題**: Planner はキーソート (`sortKeys`) した上でハッシュを計算するが、Applier の `computeQuickHash` はソートなしで `JSON.stringify` している。同じデータでもハッシュが異なる可能性があり、次回 `plan` 時に変更なしにも関わらず update が生成される。
 - **仕様**: state_spec.md に「Normalize target data (JSON.stringify with sorted keys)」と明記
 - **修正案**: Applier から `computeHash` を import して使用する
 
-### 1.2 [HIGH] `createResource` で `logical_name` が空文字列
+### 1.2 [HIGH] ~~`createResource` で `logical_name` が空文字列~~ ✅ Fixed
 
 - **場所**: `src/apply/applier.ts:122, 130, 140`
 - **問題**: State エントリの `logical_name` が常に `""` で保存される。Operation には `name` フィールドがあるが渡されていない。
 - **影響**: `destroy` コマンドで `state.resources` を走査する際に `entry.logical_name` を使用しているため、destroy が正しく動作しない
 - **修正案**: `createResource` に `name` を渡し、`logical_name: name` を設定する
 
-### 1.3 [MEDIUM] Skill `display_title` 変更検出のロジック不備
+### 1.3 [MEDIUM] ~~Skill `display_title` 変更検出のロジック不備~~ ✅ Fixed
 
 - **場所**: `src/execute/planner.ts:70-73`
 - **問題**: `resolvedConfigs.get(key)` は Agent 用の resolved config しか格納しない（`resolveFileRefs` は agents ブロックのみを処理）。Skill の `display_title` は resolve されないため `oldTitle` は常に `undefined` になり、title 変更の destroy + create が実行されない。

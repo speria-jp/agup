@@ -35,6 +35,7 @@ export interface EnvironmentEntry extends BaseEntry {
 export interface SkillEntry extends BaseEntry {
   type: "skill";
   latest_version: string;
+  display_title?: string;
 }
 
 export interface AgentEntry extends BaseEntry {
