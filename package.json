@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "lefthook": "^2.1.6",
     "oxlint": "^0.16.0",
     "typescript": "^5.9.0"
   }
