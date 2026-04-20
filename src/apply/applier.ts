@@ -87,13 +87,10 @@ function deepResolveRefs(obj: unknown, state: StateFile): Record<string, unknown
   if (typeof obj === "object") {
     const record = obj as Record<string, unknown>;
     if (record.__expr === "resource_ref") {
-      const key = `${record.resource}.${record.name}`;
-      const entry = state.resources[key];
-      if (!entry) {
-        throw new Error(`Cannot resolve reference: \${${key}.${record.attr}}`);
-      }
-      const attr = record.attr as string;
-      return (entry as unknown as Record<string, unknown>)[attr] as never;
+      return resolveResourceRef(record, state) as never;
+    }
+    if (record.__expr === "template") {
+      return resolveTemplate(record, state) as never;
     }
 
     const result: Record<string, unknown> = {};
@@ -104,6 +101,24 @@ function deepResolveRefs(obj: unknown, state: StateFile): Record<string, unknown
   }
 
   return obj as never;
+}
+
+function resolveResourceRef(record: Record<string, unknown>, state: StateFile): unknown {
+  const key = `${record.resource}.${record.name}`;
+  const entry = state.resources[key];
+  if (!entry) {
+    throw new Error(`Cannot resolve reference: \${${key}.${record.attr}}`);
+  }
+  const attr = record.attr as string;
+  return (entry as unknown as Record<string, unknown>)[attr];
+}
+
+function resolveTemplate(record: Record<string, unknown>, state: StateFile): string {
+  const parts = record.parts as Array<{ type: string; value?: string; ast?: Record<string, unknown> }>;
+  return parts.map((part) => {
+    if (part.type === "text") return part.value!;
+    return String(resolveResourceRef(part.ast!, state));
+  }).join("");
 }
 
 async function createResource(

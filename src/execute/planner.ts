@@ -2,7 +2,7 @@ import type { FileSystem } from "../fs/interface.ts";
 import type { StateFile } from "../types.ts";
 import type { Operation, Plan } from "../types.ts";
 import type { ParsedConfig } from "../parse/parser.ts";
-import type { StringWithExprs, Expr } from "../parse/expression.ts";
+import type { StringWithExprs } from "../parse/expression.ts";
 import { computeHash, computeSkillHash } from "./hash.ts";
 import { buildDag } from "../parse/dag.ts";
 import { getEntry } from "../state/store.ts";
@@ -172,39 +172,54 @@ async function resolveFileRefs(
   return resolved;
 }
 
+type ExprMarker =
+  | { __expr: "resource_ref"; resource: string; name: string; attr: string }
+  | { __expr: "template"; parts: Array<{ type: "text"; value: string } | { type: "expr"; ast: { type: "resource_ref"; resource: string; name: string; attr: string } }> };
+
 async function resolveStringWithExprs(
   strExpr: StringWithExprs,
   options: PlannerOptions,
-): Promise<string | { __expr: string; resource: string; name: string; attr: string }> {
+): Promise<string | ExprMarker> {
   if (strExpr.type === "literal") return strExpr.value;
 
-  const parts: string[] = [];
+  type ResolvedPart =
+    | { type: "text"; value: string }
+    | { type: "expr"; ast: { type: "resource_ref"; resource: string; name: string; attr: string } };
+
+  const resolvedParts: ResolvedPart[] = [];
   let hasUnresolved = false;
 
   for (const part of strExpr.parts) {
     if (part.type === "text") {
-      parts.push(part.value);
+      resolvedParts.push({ type: "text", value: part.value });
     } else if (part.expr.type === "file_ref") {
       const filePath = path.resolve(options.basePath, part.expr.path);
       const content = await options.fs.readFile(filePath);
-      parts.push(content);
+      resolvedParts.push({ type: "text", value: content });
     } else {
       hasUnresolved = true;
-      parts.push(`\${${part.expr.resource}.${part.expr.name}.${part.expr.attr}}`);
+      resolvedParts.push({
+        type: "expr",
+        ast: {
+          type: "resource_ref",
+          resource: part.expr.resource,
+          name: part.expr.name,
+          attr: part.expr.attr,
+        },
+      });
     }
   }
 
-  if (hasUnresolved && strExpr.parts.length === 1 && strExpr.parts[0]!.type === "expr") {
-    const expr = strExpr.parts[0]!.expr as Expr & { type: "resource_ref" };
-    return {
-      __expr: "resource_ref",
-      resource: expr.resource,
-      name: expr.name,
-      attr: expr.attr,
-    };
+  if (!hasUnresolved) {
+    return resolvedParts.map((p) => (p as { value: string }).value).join("");
   }
 
-  return parts.join("");
+  if (resolvedParts.length === 1 && resolvedParts[0]!.type === "expr") {
+    const { resource, name, attr } = resolvedParts[0]!.ast;
+    return { __expr: "resource_ref", resource, name, attr };
+  }
+
+  return { __expr: "template", parts: resolvedParts };
 }
 
 function injectResourceRefs(

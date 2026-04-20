@@ -35,7 +35,7 @@
 - **仕様**: operations.md に「display_title change → delete + create」と明記
 - **修正案**: State から前回の display_title を取得して比較するか、resolvedConfigs に skill の情報も格納する
 
-### 1.4 [MEDIUM] `resource_ref` が文字列に埋め込まれた場合に Apply で未解決
+### 1.4 [MEDIUM] ~~`resource_ref` が文字列に埋め込まれた場合に Apply で未解決~~ ✅ Fixed
 
 - **場所**: `src/execute/planner.ts:197` / `src/apply/applier.ts:88`
 - **問題**: `resolveStringWithExprs` は `resource_ref` が単独の場合のみ `__expr` マーカーを返す。`"prefix ${skill.x.id} suffix"` のようにテキストと混在する場合は `${skill.x.id}` という文字列リテラルに変換され、Apply 時の `deepResolveRefs` で検出・解決されない。

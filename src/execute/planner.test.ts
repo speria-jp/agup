@@ -243,6 +243,125 @@ skills:
     expect(plan.operations[1]!.type).toBe("create");
   });
 
+  test("T-1: single resource_ref produces resource_ref marker", async () => {
+    const config = parseYaml(`
+agents:
+  bot:
+    name: Bot
+    model: claude-sonnet-4-6-20250514
+    system: Hello
+    skills:
+      - type: custom
+        skill_id: "\${skill.search.id}"
+`);
+    const plan = await generatePlan(config, createEmptyState(), {
+      basePath: "/project",
+      fs: mockFs(),
+    });
+
+    const op = plan.operations[0] as { params: Record<string, unknown> };
+    const skills = op.params.skills as { skill_id: unknown }[];
+    expect(skills[0]!.skill_id).toEqual({
+      __expr: "resource_ref",
+      resource: "skill",
+      name: "search",
+      attr: "id",
+    });
+  });
+
+  test("T-2: resource_ref mixed with text produces template marker", async () => {
+    const config = parseYaml(`
+agents:
+  bot:
+    name: Bot
+    model: claude-sonnet-4-6-20250514
+    system: "Uses \${skill.search.id} for lookup"
+`);
+    const plan = await generatePlan(config, createEmptyState(), {
+      basePath: "/project",
+      fs: mockFs(),
+    });
+
+    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    expect(params.system).toEqual({
+      __expr: "template",
+      parts: [
+        { type: "text", value: "Uses " },
+        { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "search", attr: "id" } },
+        { type: "text", value: " for lookup" },
+      ],
+    });
+  });
+
+  test("T-3: multiple resource_refs produce template marker", async () => {
+    const config = parseYaml(`
+agents:
+  bot:
+    name: Bot
+    model: claude-sonnet-4-6-20250514
+    system: "\${skill.a.id} and \${skill.b.id}"
+`);
+    const plan = await generatePlan(config, createEmptyState(), {
+      basePath: "/project",
+      fs: mockFs(),
+    });
+
+    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    const tmpl = params.system as { __expr: string; parts: unknown[] };
+    expect(tmpl.__expr).toBe("template");
+    expect(tmpl.parts).toEqual([
+      { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "a", attr: "id" } },
+      { type: "text", value: " and " },
+      { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "b", attr: "id" } },
+    ]);
+  });
+
+  test("T-4: file_ref + resource_ref mixed produces template with resolved file", async () => {
+    const fs = mockFs({ "/project/intro.md": "Hello" });
+    const config = parseYaml(`
+agents:
+  bot:
+    name: Bot
+    model: claude-sonnet-4-6-20250514
+    system: "\${file('./intro.md')} uses \${skill.s.id}"
+`);
+    const plan = await generatePlan(config, createEmptyState(), {
+      basePath: "/project",
+      fs,
+    });
+
+    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    expect(params.system).toEqual({
+      __expr: "template",
+      parts: [
+        { type: "text", value: "Hello" },
+        { type: "text", value: " uses " },
+        { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "s", attr: "id" } },
+      ],
+    });
+  });
+
+  test("T-5: template with only file_refs resolves to plain string", async () => {
+    const fs = mockFs({
+      "/project/a.md": "AAA",
+      "/project/b.md": "BBB",
+    });
+    const config = parseYaml(`
+agents:
+  bot:
+    name: Bot
+    model: claude-sonnet-4-6-20250514
+    system: "\${file('./a.md')} and \${file('./b.md')}"
+`);
+    const plan = await generatePlan(config, createEmptyState(), {
+      basePath: "/project",
+      fs,
+    });
+
+    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    expect(params.system).toBe("AAA and BBB");
+  });
+
   test("F-2: file not found throws error", async () => {
     const config = parseYaml(`
 agents:

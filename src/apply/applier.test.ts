@@ -240,6 +240,206 @@ describe("applyPlan", () => {
     expect(result.error!.message).toContain("Cannot resolve reference");
   });
 
+  test("R-4: template marker resolved from state", async () => {
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "skill.search": {
+          type: "skill",
+          logical_name: "search",
+          id: "skill_abc",
+          latest_version: "v1",
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:old",
+        },
+      },
+    };
+
+    const plan: Plan = {
+      operations: [
+        {
+          type: "create",
+          resource: "agent",
+          name: "bot",
+          params: {
+            name: "Bot",
+            model: "claude-sonnet-4-6-20250514",
+            system: {
+              __expr: "template",
+              parts: [
+                { type: "text", value: "Uses " },
+                { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "search", attr: "id" } },
+                { type: "text", value: " for lookup" },
+              ],
+            },
+          },
+        },
+      ],
+    };
+
+    const calls: Record<string, unknown>[] = [];
+    const client: ApiClient = {
+      ...mockApiClient(),
+      agents: {
+        ...mockApiClient().agents,
+        create: async (params: Record<string, unknown>) => {
+          calls.push(params);
+          return { id: "agent_new", version: 1 };
+        },
+      },
+    };
+
+    const result = await applyPlan(plan, state, client);
+    expect(result.applied).toBe(1);
+    expect((calls[0] as { system: string }).system).toBe("Uses skill_abc for lookup");
+  });
+
+  test("R-5: template with multiple refs resolved", async () => {
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "skill.a": {
+          type: "skill",
+          logical_name: "a",
+          id: "skill_aaa",
+          latest_version: "v1",
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:old",
+        },
+        "skill.b": {
+          type: "skill",
+          logical_name: "b",
+          id: "skill_bbb",
+          latest_version: "v1",
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:old",
+        },
+      },
+    };
+
+    const plan: Plan = {
+      operations: [
+        {
+          type: "create",
+          resource: "agent",
+          name: "bot",
+          params: {
+            name: "Bot",
+            model: "m",
+            system: {
+              __expr: "template",
+              parts: [
+                { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "a", attr: "id" } },
+                { type: "text", value: " and " },
+                { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "b", attr: "id" } },
+              ],
+            },
+          },
+        },
+      ],
+    };
+
+    const calls: Record<string, unknown>[] = [];
+    const client: ApiClient = {
+      ...mockApiClient(),
+      agents: {
+        ...mockApiClient().agents,
+        create: async (params: Record<string, unknown>) => {
+          calls.push(params);
+          return { id: "agent_new", version: 1 };
+        },
+      },
+    };
+
+    const result = await applyPlan(plan, state, client);
+    expect(result.applied).toBe(1);
+    expect((calls[0] as { system: string }).system).toBe("skill_aaa and skill_bbb");
+  });
+
+  test("R-6: template with unresolved ref throws error", async () => {
+    const plan: Plan = {
+      operations: [
+        {
+          type: "create",
+          resource: "agent",
+          name: "bot",
+          params: {
+            name: "Bot",
+            model: "m",
+            system: {
+              __expr: "template",
+              parts: [
+                { type: "text", value: "Uses " },
+                { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "missing", attr: "id" } },
+              ],
+            },
+          },
+        },
+      ],
+    };
+
+    const result = await applyPlan(plan, createEmptyState(), mockApiClient());
+    expect(result.applied).toBe(0);
+    expect(result.error).not.toBeNull();
+    expect(result.error!.message).toContain("Cannot resolve reference");
+  });
+
+  test("R-7: template nested in params resolved recursively", async () => {
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "environment.dev": {
+          type: "environment",
+          logical_name: "dev",
+          id: "env_123",
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:old",
+        },
+      },
+    };
+
+    const plan: Plan = {
+      operations: [
+        {
+          type: "create",
+          resource: "agent",
+          name: "bot",
+          params: {
+            name: "Bot",
+            model: "m",
+            system: "Hi",
+            metadata: {
+              env_info: {
+                __expr: "template",
+                parts: [
+                  { type: "text", value: "env:" },
+                  { type: "expr", ast: { type: "resource_ref", resource: "environment", name: "dev", attr: "id" } },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    };
+
+    const calls: Record<string, unknown>[] = [];
+    const client: ApiClient = {
+      ...mockApiClient(),
+      agents: {
+        ...mockApiClient().agents,
+        create: async (params: Record<string, unknown>) => {
+          calls.push(params);
+          return { id: "agent_new", version: 1 };
+        },
+      },
+    };
+
+    const result = await applyPlan(plan, state, client);
+    expect(result.applied).toBe(1);
+    const metadata = (calls[0] as { metadata: Record<string, string> }).metadata;
+    expect(metadata.env_info).toBe("env:env_123");
+  });
+
   test("S-5: partial apply - first op saved on second failure", async () => {
     const plan: Plan = {
       operations: [
