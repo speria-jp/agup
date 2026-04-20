@@ -129,7 +129,11 @@ agents:
 
 ```yaml
 system: "You are ${file('./base-prompt.md')}\nAdditional instructions here."
+skill_id: "${skill.search.id}"
+description: "Uses skill ${skill.search.id} for lookup"
 ```
+
+`file_ref` は Plan 時に解決される（文字列に展開）。`resource_ref` が文字列内に埋め込まれている場合、Apply 時に解決される。
 
 ### パース実装
 
@@ -150,6 +154,52 @@ function parseExpr(raw: string): Expr {
   throw new Error(`Invalid expression: \${${raw}}`);
 }
 ```
+
+### 式のマーカー表現 (Plan → Apply 間)
+
+Parse/Execution Layer で式を解析した結果は、Apply Layer に渡すために JSON マーカーとして保持する。
+
+#### 単独の resource_ref
+
+```typescript
+{ __expr: "resource_ref", resource: "skill", name: "search", attr: "id" }
+```
+
+#### 文字列埋め込み (template)
+
+`resource_ref` がテキストと混在する場合、テンプレートマーカーを使用する:
+
+```typescript
+{
+  __expr: "template",
+  parts: [
+    { type: "text", value: "Uses skill " },
+    { type: "expr", ast: { type: "resource_ref", resource: "skill", name: "search", attr: "id" } },
+    { type: "text", value: " for lookup" }
+  ]
+}
+```
+
+Apply 時に各 `expr` パートの AST を評価し、`text` パートと結合して最終文字列を生成する。
+
+#### 将来の拡張: 関数式
+
+AST ノードとして関数呼び出しを導入することで、テンプレート内での変換処理に対応可能:
+
+```typescript
+// ${replace(skill.search.id, '-', '_')} の AST 表現
+{
+  type: "call",
+  fn: "replace",
+  args: [
+    { type: "resource_ref", resource: "skill", name: "search", attr: "id" },
+    { type: "literal", value: "-" },
+    { type: "literal", value: "_" }
+  ]
+}
+```
+
+テンプレートの `parts[].ast` は任意の式 AST ノードを受け付けるため、関数追加時も Apply 側の evaluator にロジックを足すだけで済む。
 
 ## バリデーション
 

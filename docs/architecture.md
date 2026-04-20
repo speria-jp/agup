@@ -91,10 +91,20 @@ Error: Circular dependency detected: agent.a → skill.b → agent.a
 | 式 | 解決タイミング | 解決するレイヤ |
 |----|--------------|--------------|
 | `${file(...)}` | plan 時 | Execution Layer |
-| `${resource.name.attr}` (既存) | plan 時 | Execution Layer (State から取得) |
-| `${resource.name.attr}` (新規) | apply 時 | Apply Layer (create 後に解決) |
+| `${resource.name.attr}` (単独、既存) | plan 時 | Execution Layer (State から取得) |
+| `${resource.name.attr}` (単独、新規) | apply 時 | Apply Layer (create 後に解決) |
+| `${resource.name.attr}` (文字列埋め込み) | apply 時 | Apply Layer (template マーカー経由) |
 
 plan 表示時、未解決の参照は `(pending)` と表示する。
+
+### マーカー形式
+
+Execution Layer → Apply Layer 間で未解決の式を伝播するため、JSON マーカーを使用する:
+
+- 単独 resource_ref: `{ __expr: "resource_ref", resource, name, attr }`
+- 文字列埋め込み: `{ __expr: "template", parts: [{ type: "text", value } | { type: "expr", ast }] }`
+
+Apply Layer の `deepResolveRefs` が両形式を再帰的に解決する。AST ノードとして式を保持するため、将来的な関数式の追加にも対応可能。
 
 ## DI インターフェース
 

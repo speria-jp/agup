@@ -127,17 +127,34 @@ destroy 順: Agent → Skill → Environment
 ### `${resource...}` の逐次解決
 
 Apply Layer が Operation を実行する際:
-1. Operation の params 内に `ResourceRef` がないか走査
-2. `ResourceRef` があれば、既に実行済みの create 結果から ID を取得
-3. ID を注入して API 呼び出し
+1. Operation の params を再帰的に走査
+2. `ResourceRef` マーカーがあれば、State（既に実行済みの create 結果含む）から値を取得
+3. `Template` マーカーがあれば、各パートの AST を評価し文字列を組み立てる
+4. 解決済みの params で API 呼び出し
 
 ```typescript
+// 単独の resource_ref（値がそのまま置換される）
 type ResourceRef = {
   __expr: "resource_ref";
   resource: string;
   name: string;
   attr: string;
 };
+
+// 文字列埋め込み（テキストと式が混在）
+type TemplateRef = {
+  __expr: "template";
+  parts: Array<
+    | { type: "text"; value: string }
+    | { type: "expr"; ast: ExprAst }
+  >;
+};
+
+// 式 AST ノード（将来の関数式にも対応）
+type ExprAst =
+  | { type: "resource_ref"; resource: string; name: string; attr: string }
+  | { type: "literal"; value: string }
+  | { type: "call"; fn: string; args: ExprAst[] };
 ```
 
 ## リトライ
