@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseYaml } from "../../src/parse/parser.ts";
+import { parseYaml } from "./parser.ts";
 
 describe("parseYaml", () => {
   test("parses valid YAML and extracts expressions", () => {

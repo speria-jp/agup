@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { computeHash, computeSkillHash } from "../../src/execute/hash.ts";
+import { computeHash, computeSkillHash } from "./hash.ts";
 
 describe("computeHash", () => {
   test("H-1: same content produces same hash", () => {

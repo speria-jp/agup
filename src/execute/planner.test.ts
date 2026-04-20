@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { generatePlan } from "../../src/execute/planner.ts";
-import { parseYaml } from "../../src/parse/parser.ts";
-import { createEmptyState } from "../../src/state/store.ts";
-import { computeHash } from "../../src/execute/hash.ts";
-import type { FileSystem } from "../../src/fs/interface.ts";
-import type { StateFile } from "../../src/types.ts";
+import { generatePlan } from "./planner.ts";
+import { parseYaml } from "../parse/parser.ts";
+import { createEmptyState } from "../state/store.ts";
+import { computeHash } from "./hash.ts";
+import type { FileSystem } from "../fs/interface.ts";
+import type { StateFile } from "../types.ts";
 
 function mockFs(files: Record<string, string> = {}): FileSystem {
   return {

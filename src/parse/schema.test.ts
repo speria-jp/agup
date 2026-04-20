@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { AgentformConfigSchema } from "../../src/parse/schema.ts";
+import { AgentformConfigSchema } from "./schema.ts";
 
 describe("AgentformConfigSchema", () => {
   test("P-1: full config with all resource types", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseExpr, parseString } from "../../src/parse/expression.ts";
+import { parseExpr, parseString } from "./expression.ts";
 
 describe("parseExpr", () => {
   test("E-1: resource reference", () => {

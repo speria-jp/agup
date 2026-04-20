@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { parseYaml } from "../../src/parse/parser.ts";
-import { buildDag } from "../../src/parse/dag.ts";
+import { parseYaml } from "./parser.ts";
+import { buildDag } from "./dag.ts";
 
 describe("buildDag", () => {
   test("D-1: no dependencies - environment + skill only", () => {

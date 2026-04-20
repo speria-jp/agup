@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "bun run src/index.ts",
     "test": "bun test",
-    "lint": "bunx oxlint src/ tests/",
+    "lint": "bunx oxlint src/",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

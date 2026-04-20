@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { applyPlan } from "../../src/apply/applier.ts";
-import { createEmptyState } from "../../src/state/store.ts";
-import type { ApiClient } from "../../src/api/interface.ts";
-import type { Plan, StateFile } from "../../src/types.ts";
+import { applyPlan } from "./applier.ts";
+import { createEmptyState } from "../state/store.ts";
+import type { ApiClient } from "../api/interface.ts";
+import type { Plan, StateFile } from "../types.ts";
 
 function mockApiClient(overrides?: Partial<{
   agentCreate: () => Promise<{ id: string; version: number }>;
