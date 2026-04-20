@@ -66,6 +66,16 @@
 | H-3 | 値変更 → 異なるハッシュ | 1 フィールド変更 | ハッシュ不一致 |
 | H-4 | Skill ディレクトリ | ファイル追加 | ハッシュ不一致 |
 
+### テンプレートマーカー生成
+
+| # | ケース | 入力 | 期待結果 |
+|---|--------|------|----------|
+| T-1 | resource_ref 単独 | `"${skill.search.id}"` | `{ __expr: "resource_ref", ... }` マーカー |
+| T-2 | resource_ref + テキスト混在 | `"prefix ${skill.search.id} suffix"` | `{ __expr: "template", parts: [text, expr, text] }` |
+| T-3 | 複数 resource_ref 埋め込み | `"${skill.a.id} and ${skill.b.id}"` | `{ __expr: "template", parts: [expr, text, expr] }` |
+| T-4 | file_ref + resource_ref 混在 | `"${file('./x.md')} uses ${skill.s.id}"` | file 部分は解決済み文字列、resource_ref 部分は expr パート |
+| T-5 | resource_ref なしのテンプレート | `"${file('./a.md')} and ${file('./b.md')}"` | 全て解決済みの plain string (マーカーなし) |
+
 ### ${file(...)} 解決
 
 | # | ケース | 入力 | 期待結果 |
@@ -96,6 +106,10 @@
 | R-1 | 既存リソースへの参照 | State に ID あり | State から ID 取得 |
 | R-2 | 新規リソースへの参照 | 同一 apply 内で先に create | create 結果の ID を使用 |
 | R-3 | 解決不能な参照 | 参照先が存在しない | Error |
+| R-4 | テンプレート解決 (単一 ref) | `{ __expr: "template", parts: [text, expr, text] }` | 文字列に組み立て |
+| R-5 | テンプレート解決 (複数 ref) | parts 内に複数 expr | 全て解決して結合 |
+| R-6 | テンプレート内の未解決参照 | expr の参照先が State にない | Error |
+| R-7 | ネストした params 内のテンプレート | `{ config: { url: template } }` | 再帰的に解�� |
 
 ### State 更新
 
