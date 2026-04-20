@@ -1,0 +1,24 @@
+{
+  "name": "agup",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '@agup/cli' dev",
+    "build": "bun run --filter '@agup/core' build && bun run --filter '@agup/cli' build",
+    "test": "bun run --filter '*' test",
+    "test:e2e": "bun run --filter '@agup/cli' test:e2e",
+    "lint": "bunx oxlint packages/",
+    "typecheck": "bun run --filter '*' typecheck",
+    "bump": "bun run scripts/bump-version.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/semver": "^7.7.1",
+    "lefthook": "^2.1.6",
+    "oxlint": "^1.61.0",
+    "semver": "^7.7.4",
+    "typescript": "^6.0.3"
+  }
+}
