@@ -8,8 +8,8 @@ import { LocalFileSystem } from "./fs/local.ts";
 import type { ApiClient } from "./api/interface.ts";
 import type { Operation, Plan, StateFile } from "./types.ts";
 
-const DEFAULT_CONFIG_PATH = "agentform.yaml";
-const DEFAULT_STATE_PATH = "agentform.state.json";
+const DEFAULT_CONFIG_PATH = "agup.yaml";
+const DEFAULT_STATE_PATH = "agup.state.json";
 
 async function main() {
   const command = process.argv[2];
@@ -205,7 +205,7 @@ async function createApiClient(): Promise<ApiClient> {
 
 function printUsage() {
   console.log(`
-Usage: agentform <command>
+Usage: agup <command>
 
 Commands:
   plan      Show execution plan

@@ -1,4 +1,4 @@
-# agentform - Documentation
+# agup - Documentation
 
 Claude Managed Agent のリソースを宣言的に管理する CLI ツールの設計ドキュメント。
 

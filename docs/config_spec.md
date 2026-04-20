@@ -2,7 +2,7 @@
 
 ## ファイル
 
-デフォルトパス: `./agentform.yaml`
+デフォルトパス: `./agup.yaml`
 
 ## トップレベル構造
 
@@ -53,7 +53,7 @@ skills:
     directory: string  # SKILL.md を含むローカルディレクトリパス
 ```
 
-- `directory` は `agentform.yaml` の位置を基準に相対解決
+- `directory` は `agup.yaml` の位置を基準に相対解決
 - ディレクトリ内に `SKILL.md` が必須
 
 ## Agent
@@ -120,7 +120,7 @@ agents:
     system: ${file('./prompts/support.md')}
 ```
 
-- パスは `agentform.yaml` の位置を基準に相対解決
+- パスは `agup.yaml` の位置を基準に相対解決
 - ファイル内容がそのまま文字列値として展開される
 
 ### 文字列中への埋め込み

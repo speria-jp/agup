@@ -2,7 +2,7 @@
 
 ## Overview
 
-agentform は 3 層アーキテクチャで構成される。各層は明確な入出力を持ち、DI によりテスタブルに保つ。
+agup は 3 層アーキテクチャで構成される。各層は明確な入出力を持ち、DI によりテスタブルに保つ。
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -62,8 +62,8 @@ ApiClient インターフェース経由で API 呼び出しを行う。
 ## CLI コマンドと層の対応
 
 ```
-agentform plan  → Parse/Resolve + Execution → Plan を表示
-agentform apply → Parse/Resolve + Execution + Apply → State 更新
+agup plan  → Parse/Resolve + Execution → Plan を表示
+agup apply → Parse/Resolve + Execution + Apply → State 更新
 ```
 
 ## DAG と依存解決
@@ -132,7 +132,7 @@ interface ApiClient {
 ## プロジェクト構造
 
 ```
-agentform/
+agup/
 ├── src/
 │   ├── index.ts              # CLI エントリーポイント
 │   ├── parse/
@@ -165,4 +165,4 @@ agentform/
 
 - **API エラー**: リトライ（429, 5xx）、それ以外は即座にエラー表示して停止
 - **部分適用**: apply 途中で失敗した場合、成功した分の state は保存する（partial apply）
-- **State 不整合**: `agentform state refresh` で API から最新状態を取得して state を再構築
+- **State 不整合**: `agup state refresh` で API から最新状態を取得して state を再構築

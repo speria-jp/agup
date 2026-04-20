@@ -1,4 +1,4 @@
-# agentform
+# agup
 
 Claude Managed Agent のリソース（Agent, Skill, Environment）を宣言的に管理する CLI ツール。
 Terraform ライクな plan/apply ワークフローで、YAML 定義と API を同期する。
@@ -6,15 +6,15 @@ Terraform ライクな plan/apply ワークフローで、YAML 定義と API を
 ## Usage
 
 ```bash
-agentform plan      # 差分を表示
-agentform apply     # API に反映
-agentform destroy   # 全リソース削除
-agentform state     # State を表示
+agup plan      # 差分を表示
+agup apply     # API に反映
+agup destroy   # 全リソース削除
+agup state     # State を表示
 ```
 
 ## Configuration
 
-`agentform.yaml` にリソースを定義する:
+`agup.yaml` にリソースを定義する:
 
 ```yaml
 environments:

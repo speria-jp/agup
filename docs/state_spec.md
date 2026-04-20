@@ -2,7 +2,7 @@
 
 ## ファイル
 
-デフォルトパス: `./agentform.state.json`
+デフォルトパス: `./agup.state.json`
 
 ## フォーマット
 

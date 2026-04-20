@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-agentform - Claude Managed Agent リソースの宣言的管理ツール (Terraform-like)
+agup - Claude Managed Agent リソースの宣言的管理ツール (Terraform-like)
 
 ## Tech Stack
 
 - Runtime: Bun
 - Language: TypeScript
-- Config format: YAML (agentform.yaml)
-- State: agentform.state.json
+- Config format: YAML (agup.yaml)
+- State: agup.state.json
 - API client: @anthropic-ai/sdk
 
 ## Architecture
