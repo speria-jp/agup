@@ -27,7 +27,7 @@ export const EnvironmentConfigSchema = z.object({
       })
       .optional(),
   }),
-  metadata: z.record(z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 });
 
 export const SkillConfigSchema = z.object({
@@ -64,13 +64,13 @@ export const AgentConfigSchema = z.object({
     )
     .optional(),
   tools: z.array(z.unknown()).optional(),
-  metadata: z.record(z.string()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 });
 
 export const AgentformConfigSchema = z.object({
-  environments: z.record(EnvironmentConfigSchema).optional(),
-  skills: z.record(SkillConfigSchema).optional(),
-  agents: z.record(AgentConfigSchema).optional(),
+  environments: z.record(z.string(), EnvironmentConfigSchema).optional(),
+  skills: z.record(z.string(), SkillConfigSchema).optional(),
+  agents: z.record(z.string(), AgentConfigSchema).optional(),
 });
 
 export type AgentformConfig = z.infer<typeof AgentformConfigSchema>;
