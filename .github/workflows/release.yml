@@ -25,15 +25,19 @@ jobs:
       - name: Pack @agup/core
         id: pack-core
         working-directory: packages/core
-        run: echo "tgz=$(bun pm pack --destination "$GITHUB_WORKSPACE/dist" --quiet)" >> "$GITHUB_OUTPUT"
+        run: |
+          TGZ=$(bun pm pack --destination "$GITHUB_WORKSPACE/dist" --quiet)
+          echo "tgz=$TGZ" >> "$GITHUB_OUTPUT"
 
       - name: Pack @agup/cli
         id: pack-cli
         working-directory: packages/cli
-        run: echo "tgz=$(bun pm pack --destination "$GITHUB_WORKSPACE/dist" --quiet)" >> "$GITHUB_OUTPUT"
+        run: |
+          TGZ=$(bun pm pack --destination "$GITHUB_WORKSPACE/dist" --quiet)
+          echo "tgz=$TGZ" >> "$GITHUB_OUTPUT"
 
       - name: Publish @agup/core
-        run: npm publish "dist/${{ steps.pack-core.outputs.tgz }}" --provenance --access public
+        run: npm publish "${{ steps.pack-core.outputs.tgz }}" --provenance --access public
 
       - name: Publish @agup/cli
-        run: npm publish "dist/${{ steps.pack-cli.outputs.tgz }}" --provenance --access public
+        run: npm publish "${{ steps.pack-cli.outputs.tgz }}" --provenance --access public
