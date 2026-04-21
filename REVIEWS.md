@@ -71,7 +71,7 @@
 - **問題**: 引数を受け取るだけで何もしないスタブ関数。Plan 時に既存リソースの参照を解決する役割だが未実装。
 - **影響**: Plan 表示時に既存リソースの参照値が表示されない（`(pending)` のまま）。Apply 時には `deepResolveRefs` で正しく解決されるため動作上は問題ないが、仕様では「既存リソースは Plan 時に解決」とされている。
 
-### 2.4 [LOW] FileSystem エラーハンドリング
+### 2.4 [LOW] ~~FileSystem エラーハンドリング~~ ✅ Fixed
 
 - **場所**: `src/fs/local.ts`
 - **問題**: `readFile` / `readDirectory` が例外をそのまま throw する。ユーザーフレンドリーなエラーメッセージ（例: "File not found: ./prompts/missing.md referenced in agents.bot.system"）が出ない。

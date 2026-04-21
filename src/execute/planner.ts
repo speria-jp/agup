@@ -52,7 +52,13 @@ export async function generatePlan(
     for (const [name, skillConfig] of Object.entries(config.raw.skills)) {
       const key = `skill.${name}`;
       const dirPath = path.resolve(options.basePath, skillConfig.directory);
-      const files = await options.fs.readDirectory(dirPath);
+      let files: Awaited<ReturnType<FileSystem["readDirectory"]>>;
+      try {
+        files = await options.fs.readDirectory(dirPath);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        throw new Error(`Failed to read skill directory "${skillConfig.directory}" for skills.${name}: ${msg}`);
+      }
       const hash = computeSkillHash(skillConfig.display_title, files);
       const existing = getEntry(state, key);
 
@@ -166,8 +172,8 @@ async function resolveFileRefs(
 
       for (const [exprPath, strExpr] of config.expressions) {
         if (!exprPath.startsWith(`agents.${name}.`)) continue;
-        const resolvedValue = await resolveStringWithExprs(strExpr, options);
         const fieldPath = exprPath.slice(`agents.${name}.`.length);
+        const resolvedValue = await resolveStringWithExprs(strExpr, options, `agents.${name}.${fieldPath}`);
         setNestedValue(obj, fieldPath, resolvedValue);
       }
 
@@ -185,6 +191,7 @@ type ExprMarker =
 async function resolveStringWithExprs(
   strExpr: StringWithExprs,
   options: PlannerOptions,
+  context?: string,
 ): Promise<string | ExprMarker> {
   if (strExpr.type === "literal") return strExpr.value;
 
@@ -200,7 +207,14 @@ async function resolveStringWithExprs(
       resolvedParts.push({ type: "text", value: part.value });
     } else if (part.expr.type === "file_ref") {
       const filePath = path.resolve(options.basePath, part.expr.path);
-      const content = await options.fs.readFile(filePath);
+      let content: string;
+      try {
+        content = await options.fs.readFile(filePath);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        const ctx = context ? ` referenced in ${context}` : "";
+        throw new Error(`Failed to read file "${part.expr.path}"${ctx}: ${msg}`);
+      }
       resolvedParts.push({ type: "text", value: content });
     } else {
       hasUnresolved = true;
