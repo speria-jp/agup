@@ -178,6 +178,159 @@ describe("applyPlan", () => {
     expect(result.state.resources["agent.bot"]).toBeUndefined();
   });
 
+  test("A-2: environment update", async () => {
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "environment.dev": {
+          type: "environment",
+          logical_name: "dev",
+          id: "env_123",
+          depends_on: [],
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:old",
+        },
+      },
+    };
+
+    const calls: { id: string; params: Record<string, unknown> }[] = [];
+    const client = mockApiClient();
+    client.environments.update = async (id, params) => {
+      calls.push({ id, params });
+      return { id };
+    };
+
+    const plan: Plan = {
+      dependencies: {},
+      operations: [
+        {
+          type: "update",
+          resource: "environment",
+          name: "dev",
+          id: "env_123",
+          params: { name: "Dev Updated", config: { type: "cloud" } },
+        },
+      ],
+    };
+
+    const result = await applyPlan(plan, state, client);
+    expect(result.applied).toBe(1);
+    expect(result.error).toBeNull();
+    expect(calls[0]!.id).toBe("env_123");
+    expect(calls[0]!.params.name).toBe("Dev Updated");
+    const entry = result.state.resources["environment.dev"]!;
+    expect(entry.id).toBe("env_123");
+    expect(entry.last_applied_hash).not.toBe("sha256:old");
+  });
+
+  test("A-7: agent update with version", async () => {
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "agent.bot": {
+          type: "agent",
+          logical_name: "bot",
+          id: "agent_123",
+          depends_on: [],
+          version: 3,
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:old",
+        },
+      },
+    };
+
+    const calls: Record<string, unknown>[] = [];
+    const client = mockApiClient();
+    client.agents.update = async (_id, params) => {
+      calls.push(params);
+      return { id: "agent_123", version: 4 };
+    };
+
+    const plan: Plan = {
+      dependencies: {},
+      operations: [
+        {
+          type: "update",
+          resource: "agent",
+          name: "bot",
+          id: "agent_123",
+          params: { name: "Bot", model: "claude-sonnet-4-6-20250514", system: "Updated" },
+        },
+      ],
+    };
+
+    const result = await applyPlan(plan, state, client);
+    expect(result.applied).toBe(1);
+    expect(result.error).toBeNull();
+    expect(calls[0]!.version).toBe(3);
+    const entry = result.state.resources["agent.bot"] as { version: number; last_applied_hash: string };
+    expect(entry.version).toBe(4);
+    expect(entry.last_applied_hash).not.toBe("sha256:old");
+  });
+
+  test("S-1: create stores complete state entry", async () => {
+    const plan: Plan = {
+      dependencies: { "agent.bot": ["skill.search"] },
+      operations: [
+        {
+          type: "create",
+          resource: "agent",
+          name: "bot",
+          params: { name: "Bot", model: "claude-sonnet-4-6-20250514", system: "Hi" },
+        },
+      ],
+    };
+
+    const result = await applyPlan(plan, createEmptyState(), mockApiClient());
+    const entry = result.state.resources["agent.bot"]!;
+    expect(entry.id).toBe("agent_new");
+    expect(entry.logical_name).toBe("bot");
+    expect(entry.type).toBe("agent");
+    expect(entry.created_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(entry.last_applied_hash).toMatch(/^sha256:/);
+    expect(entry.depends_on).toEqual(["skill.search"]);
+    expect((entry as { version: number }).version).toBe(1);
+  });
+
+  test("S-2: agent update increments version", async () => {
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "agent.bot": {
+          type: "agent",
+          logical_name: "bot",
+          id: "agent_123",
+          depends_on: [],
+          version: 5,
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:old",
+        },
+      },
+    };
+
+    const client = mockApiClient({
+      agentUpdate: async () => ({ id: "agent_123", version: 6 }),
+    });
+
+    const plan: Plan = {
+      dependencies: {},
+      operations: [
+        {
+          type: "update",
+          resource: "agent",
+          name: "bot",
+          id: "agent_123",
+          params: { name: "Bot", model: "m", system: "New" },
+        },
+      ],
+    };
+
+    const result = await applyPlan(plan, state, client);
+    const entry = result.state.resources["agent.bot"] as { version: number; created_at: string };
+    expect(entry.version).toBe(6);
+    expect(entry.created_at).toBe("2026-04-20T10:00:00Z");
+  });
+
   test("R-2: resource ref resolved from create result", async () => {
     const plan: Plan = {
       dependencies: {},

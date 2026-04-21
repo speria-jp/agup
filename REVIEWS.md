@@ -82,24 +82,24 @@
 
 ### 未実装テスト (TODO.md に記載済み)
 
-| ID   | 内容                                    | 重要度 |
-|------|-----------------------------------------|--------|
-| X-5  | Skill display_title 変更 → destroy + create | High (バグ 1.3 の修正後に追加) |
-| A-2  | Environment update                      | Medium |
-| A-7  | Agent update (version 含む)             | Medium |
-| R-1  | 既存リソース参照解決                    | Medium |
-| S-1  | Create 後の State エントリ確認          | Low    |
-| S-2  | Agent update 後の version increment     | Medium |
-| S-3  | Skill create_version 後の latest_version | Low    |
-| S-4  | Destroy 後の State エントリ削除         | Low    |
-| RT-* | リトライロジック全般                    | Medium |
-| E2E  | シナリオテスト (S-1 ~ S-7)             | High   |
+| ID   | 内容                                    | 重要度 | 状態 |
+|------|-----------------------------------------|--------|------|
+| X-5  | Skill display_title 変更 → destroy + create | High | ✅ Done |
+| A-2  | Environment update                      | Medium | ✅ Done |
+| A-7  | Agent update (version 含む)             | Medium | ✅ Done |
+| R-1  | 既存リソース参照解決                    | Medium | ✅ Done |
+| S-1  | Create 後の State エントリ確認          | Low    | ✅ Done |
+| S-2  | Agent update 後の version increment     | Medium | ✅ Done |
+| S-3  | Skill create_version 後の latest_version | Low    | ✅ Done (A-4) |
+| S-4  | Destroy 後の State エントリ削除         | Low    | ✅ Done (A-5/A-8) |
+| RT-* | リトライロジック全般                    | Medium | |
+| E2E  | シナリオテスト (S-1 ~ S-7)             | High   | |
 
 ### テストで検証されていない重要なパス
 
-- `runDestroy` の end-to-end 動作 (logical_name が空なのでおそらく壊れている)
+- ~~`runDestroy` の end-to-end 動作 (logical_name が空なのでおそらく壊れている)~~ ✅ Fixed (logical_name バグ修正済み)
 - 複数リソースが相互参照する場合の apply 順序
-- State ファイルが破損している場合の挙動
+- ~~State ファイルが破損している場合の挙動~~ ✅ Done (parseState Zod バリデーション追加)
 
 ---
 
