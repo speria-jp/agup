@@ -125,3 +125,8 @@
 - [x] README.md 作成
 - [x] LICENSE 追加
 - [ ] npm publish
+
+## 12. Review fix
+
+- **File Read**: `${file(...)}` は basePath からの相対パスで解決されるが、`../../../etc/passwd` のようなパストラバーサルの防御がない。信頼できる入力前提であれば問題ないが、共有環境での利用を想定する場合は basePath 外へのアクセスを制限すべき。
+- **State File**: 認証情報は含まないことを spec にポリシーとして明記
