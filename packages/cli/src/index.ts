@@ -1,12 +1,17 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { parseYaml } from "./parse/parser.ts";
-import { generatePlan } from "./execute/planner.ts";
-import { applyPlan } from "./apply/applier.ts";
-import { createEmptyState, parseState, serializeState, destroyOrder } from "./state/store.ts";
-import { LocalFileSystem } from "./fs/local.ts";
-import type { ApiClient } from "./api/interface.ts";
-import type { Operation, Plan, StateFile } from "./types.ts";
+import {
+  parseYaml,
+  generatePlan,
+  applyPlan,
+  createEmptyState,
+  parseState,
+  serializeState,
+  destroyOrder,
+  LocalFileSystem,
+  SdkApiClient,
+} from "@agup/core";
+import type { ApiClient, Operation, Plan, StateFile } from "@agup/core";
 
 const DEFAULT_CONFIG_PATH = "agup.yaml";
 const DEFAULT_STATE_PATH = "agup.state.json";
@@ -201,7 +206,6 @@ async function confirm(message: string): Promise<boolean> {
 }
 
 async function createApiClient(): Promise<ApiClient> {
-  const { SdkApiClient } = await import("./api/sdk-client.ts");
   return new SdkApiClient();
 }
 

@@ -4,11 +4,6 @@
   "workspaces": {
     "": {
       "name": "agup",
-      "dependencies": {
-        "@anthropic-ai/sdk": "^0.90.0",
-        "yaml": "^2.8.3",
-        "zod": "^4.3.6",
-      },
       "devDependencies": {
         "@types/bun": "latest",
         "lefthook": "^2.1.6",
@@ -16,8 +11,34 @@
         "typescript": "^6.0.3",
       },
     },
+    "packages/cli": {
+      "name": "@agup/cli",
+      "version": "0.1.0",
+      "bin": {
+        "agup": "./dist/index.js",
+      },
+      "dependencies": {
+        "@agup/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@anthropic-ai/sdk": "^0.90.0",
+      },
+    },
+    "packages/core": {
+      "name": "@agup/core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@anthropic-ai/sdk": "^0.90.0",
+        "yaml": "^2.8.3",
+        "zod": "^4.3.6",
+      },
+    },
   },
   "packages": {
+    "@agup/cli": ["@agup/cli@workspace:packages/cli"],
+
+    "@agup/core": ["@agup/core@workspace:packages/core"],
+
     "@anthropic-ai/sdk": ["@anthropic-ai/sdk@0.90.0", "", { "dependencies": { "json-schema-to-ts": "^3.1.1" }, "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["zod"], "bin": { "anthropic-ai-sdk": "bin/cli" } }, "sha512-MzZtPabJF1b0FTDl6Z6H5ljphPwACLGP13lu8MTiB8jXaW/YXlpOp+Po2cVou3MPM5+f5toyLnul9whKCy7fBg=="],
 
     "@babel/runtime": ["@babel/runtime@7.29.2", "", {}, "sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g=="],

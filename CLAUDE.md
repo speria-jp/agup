@@ -19,15 +19,22 @@ agup - Declarative management tool for Claude Managed Agent resources (Terraform
 
 ## Project Structure
 
+Monorepo with Bun workspaces:
+
 ```
-src/
-├── index.ts           # CLI entry point
-├── parse/             # Parse/Resolve Layer
-├── execute/           # Execution Layer
-├── apply/             # Apply Layer
-├── api/               # ApiClient interface & implementation
-├── state/             # State management
-└── fs/                # FileSystem interface & implementation
+packages/
+├── core/              # @agup/core - Core logic library
+│   └── src/
+│       ├── parse/     # Parse/Resolve Layer
+│       ├── execute/   # Execution Layer
+│       ├── apply/     # Apply Layer
+│       ├── api/       # ApiClient interface & implementation
+│       ├── state/     # State management
+│       ├── fs/        # FileSystem interface & implementation
+│       └── types.ts   # Shared type definitions
+└── cli/               # @agup/cli - CLI entry point (npx @agup/cli)
+    └── src/
+        └── index.ts
 ```
 
 ## Development Style

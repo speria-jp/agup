@@ -1,28 +1,16 @@
 {
   "name": "agup",
-  "version": "0.1.0",
-  "description": "Declarative CLI for managing Claude Managed Agent resources",
-  "license": "MIT",
-  "module": "src/index.ts",
-  "type": "module",
-  "bin": {
-    "agup": "./dist/index.js"
-  },
-  "files": [
-    "dist"
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "build": "bun build src/index.ts --target=node --outdir=dist --minify && printf '#!/usr/bin/env node\\n' | cat - dist/index.js > dist/tmp.js && mv dist/tmp.js dist/index.js && chmod +x dist/index.js",
-    "dev": "bun run src/index.ts",
-    "test": "bun test --path-ignore-patterns tests/e2e",
-    "test:e2e": "bun test tests/e2e",
-    "lint": "bunx oxlint src/",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.90.0",
-    "yaml": "^2.8.3",
-    "zod": "^4.3.6"
+    "dev": "bun run --filter '@agup/cli' dev",
+    "build": "bun run --filter '@agup/cli' build",
+    "test": "bun run --filter '*' test",
+    "test:e2e": "bun run --filter '@agup/cli' test:e2e",
+    "lint": "bunx oxlint packages/",
+    "typecheck": "bun run --filter '*' typecheck"
   },
   "devDependencies": {
     "@types/bun": "latest",

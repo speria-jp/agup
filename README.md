@@ -5,13 +5,13 @@ Declarative CLI for managing [Claude Managed Agent](https://docs.anthropic.com/e
 ## Install
 
 ```bash
-npm install -g agup
+npm install -g @agup/cli
 ```
 
 Or run directly:
 
 ```bash
-npx agup plan
+npx @agup/cli plan
 ```
 
 ## Quick Start
@@ -108,14 +108,24 @@ agup follows a plan/apply workflow:
 
 State is stored in `agup.state.json`. You can commit it to share state across a team, or add it to `.gitignore` for local-only management.
 
+## Project Structure
+
+Monorepo with Bun workspaces:
+
+| Package | Description |
+|---------|-------------|
+| [`@agup/core`](packages/core) | Core logic (parse, execute, apply, state) |
+| [`@agup/cli`](packages/cli) | CLI entry point |
+
 ## Development
 
 ```bash
-bun run test      # Run unit/integration tests (excludes e2e)
-bun run test:e2e  # Run e2e tests (requires ANTHROPIC_API_KEY)
-bun run dev       # Run from source
-bun run build     # Build for Node.js
-bun run lint      # Lint with oxlint
+bun run test       # Run unit/integration tests (all packages)
+bun run test:e2e   # Run e2e tests (requires ANTHROPIC_API_KEY)
+bun run dev        # Run CLI from source
+bun run build      # Build CLI for Node.js
+bun run lint       # Lint with oxlint
+bun run typecheck  # Type check all packages
 ```
 
 ## Documentation
