@@ -1,6 +1,6 @@
 # agup
 
-Declarative CLI for managing [Claude Managed Agent](https://docs.anthropic.com/en/docs/agents-and-tools/claude-managed-agents) resources (environments, skills, agents) via YAML configuration, inspired by Terraform.
+Declarative CLI for managing [Claude Managed Agent](https://platform.claude.com/docs/en/managed-agents/overview) resources (environments, skills, agents) via YAML configuration, inspired by Terraform.
 
 ## Install
 
