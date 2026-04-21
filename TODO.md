@@ -55,7 +55,7 @@
   - [x] update Operation 導出 (ハッシュ不一致)
   - [x] create_version Operation 導出 (Skill ファイル変更)
   - [x] destroy Operation 導出 (YAML にない)
-  - [ ] Skill display_title 変更 → destroy + create
+  - [x] Skill display_title 変更 → destroy + create
 
 ## 6. Apply Layer
 
@@ -106,10 +106,10 @@
 
 ## 10. 残タスク
 
-- [ ] X-5: Skill display_title 変更テスト追加
-- [ ] A-2: Environment update テスト追加
-- [ ] A-7: Agent update テスト追加
-- [ ] R-1: 既存リソース参照テスト追加
-- [ ] S-2: Agent update 時の version increment テスト追加
-- [ ] E2E シナリオテスト (S-1 ~ S-7)
+- [x] X-5: Skill display_title 変更テスト追加
+- [x] A-2: Environment update テスト追加
+- [x] A-7: Agent update テスト追加
+- [x] R-1: 既存リソース参照テスト追加
+- [x] S-2: Agent update 時の version increment テスト追加
+- [x] E2E シナリオテスト (S-1 ~ S-7)
 - [ ] リトライテスト (RT-1 ~ RT-3)
