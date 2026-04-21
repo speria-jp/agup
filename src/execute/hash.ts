@@ -1,8 +1,9 @@
+import { createHash } from "node:crypto";
 import type { FileEntry } from "../fs/interface.ts";
 
 export function computeHash(data: Record<string, unknown>): string {
   const normalized = JSON.stringify(sortKeys(data));
-  const hash = new Bun.CryptoHasher("sha256").update(normalized).digest("hex");
+  const hash = createHash("sha256").update(normalized).digest("hex");
   return `sha256:${hash}`;
 }
 

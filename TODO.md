@@ -104,7 +104,7 @@
   - [x] 参照解決 (R-2 ~ R-3)
   - [x] State 更新 (S-1, S-3 ~ S-5)
 
-## 10. 残タスク
+## 10. 残テスト
 
 - [x] X-5: Skill display_title 変更テスト追加
 - [x] A-2: Environment update テスト追加
@@ -113,3 +113,15 @@
 - [x] S-2: Agent update 時の version increment テスト追加
 - [x] E2E シナリオテスト (S-1 ~ S-7)
 - [ ] リトライテスト (RT-1 ~ RT-3)
+
+## 11. npx 対応・公開準備
+
+- [x] `Bun.CryptoHasher` → `node:crypto` の `createHash` に置き換え (src/execute/hash.ts)
+- [x] `bun build --target=node` でバンドルスクリプト追加 (package.json `build`)
+- [x] package.json: `bin` フィールド追加 (`"bin": { "agup": "./dist/index.js" }`)
+- [x] package.json: `files` フィールド追加 (`["dist"]`)
+- [x] package.json: `private: true` 削除
+- [x] ビルド成果物の動作確認 (`node dist/index.js plan`)
+- [x] README.md 作成
+- [x] LICENSE 追加
+- [ ] npm publish
