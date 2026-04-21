@@ -184,3 +184,35 @@
 前提: 全リソース apply 済み。YAML 変更なし
 
 1. `plan` → "No changes. Infrastructure is up-to-date." と表示
+
+## E2E テスト
+
+実ファイル・実 API (Anthropic) を使った CLI レベルのテスト。
+`bun run test:e2e` で明示的に実行する (`bun test` では実行されない)。
+
+### 前提条件
+
+- 環境変数 `ANTHROPIC_API_KEY` が必須 (未設定ならエラー終了)
+- 一時ディレクトリに agup.yaml + skill ファイルを配置して実行
+- CLI は `Bun.spawn` で `bun run src/index.ts <command> --yes` を実行
+- テスト失敗時は state ファイルを残し、手動クリーンアップを案内するメッセージを表示
+
+### E2E-1: フルライフサイクル
+
+前提: 一時ディレクトリに environment + skill + agent を定義した agup.yaml を配置
+
+1. `plan` → exit 0、stdout に create 操作が表示される
+2. `apply --yes` → exit 0、リソースが作成される
+3. agup.state.json が生成され、各リソースの id が記録されている
+4. Skill ディレクトリ内のファイルを変更
+5. `plan` → create_version 操作が表示される
+6. `apply --yes` → exit 0、新バージョンが作成される
+7. `destroy --yes` → exit 0、全リソース削除
+8. agup.state.json の resources が空になる
+
+### E2E-2: 冪等性
+
+前提: E2E-1 のステップ 2 完了後の状態 (全リソース apply 済み)
+
+1. `plan` → exit 0、"No changes. Infrastructure is up-to-date." と表示
+2. `apply --yes` → exit 0、"No changes." と表示 (API 呼び出しなし)
