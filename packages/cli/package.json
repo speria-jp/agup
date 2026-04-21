@@ -1,6 +1,6 @@
 {
   "name": "@agup/cli",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Declarative CLI for managing Claude Managed Agent resources",
   "license": "MIT",
   "publishConfig": {
