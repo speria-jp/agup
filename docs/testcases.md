@@ -197,6 +197,13 @@ Run explicitly with `bun run test:e2e` (not included in `bun test`).
 - CLI invoked via `Bun.spawn` running `bun run src/index.ts <command> --yes`
 - On test failure, state file is kept and a manual cleanup message is displayed
 
+### CLI Prompt Handling
+
+| # | Case | Input | Expected |
+|---|------|-------|----------|
+| C-1 | Apply confirmation accepts affirmative answers | `y`, `yes`, mixed case, surrounding whitespace | Apply continues |
+| C-2 | Apply confirmation defaults to no | empty input, `n`, `no` | Apply is cancelled |
+
 ### E2E-1: Full Lifecycle
 
 Precondition: agup.yaml with environment + skill + agent placed in temp directory

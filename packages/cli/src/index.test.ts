@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseCliArgs } from "./index.ts";
+import { parseCliArgs, parseConfirmationAnswer } from "./index.ts";
 
 describe("parseCliArgs", () => {
   test("parses global options before the command", () => {
@@ -76,5 +76,19 @@ describe("parseCliArgs", () => {
     expect(() => parseCliArgs(["--help", "--version"])).toThrow(
       "The version flag cannot be combined with the help flag.",
     );
+  });
+});
+
+describe("parseConfirmationAnswer", () => {
+  test("accepts y and yes in a case-insensitive way", () => {
+    expect(parseConfirmationAnswer("y")).toBe(true);
+    expect(parseConfirmationAnswer("YES")).toBe(true);
+    expect(parseConfirmationAnswer(" yes ")).toBe(true);
+  });
+
+  test("rejects empty and non-affirmative answers", () => {
+    expect(parseConfirmationAnswer("")).toBe(false);
+    expect(parseConfirmationAnswer("n")).toBe(false);
+    expect(parseConfirmationAnswer("no")).toBe(false);
   });
 });
