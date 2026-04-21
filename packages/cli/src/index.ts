@@ -1,5 +1,6 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import {
   parseYaml,
@@ -304,13 +305,23 @@ function operationDetail(op: Operation): string {
   }
 }
 
+export function parseConfirmationAnswer(answer: string): boolean {
+  const normalized = answer.trim().toLowerCase();
+  return normalized === "y" || normalized === "yes";
+}
+
 async function confirm(message: string): Promise<boolean> {
-  process.stdout.write(`${message} [y/N] `);
-  for await (const line of console) {
-    const answer = (line as string).trim().toLowerCase();
-    return answer === "y" || answer === "yes";
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    const answer = await rl.question(`${message} [y/N] `);
+    return parseConfirmationAnswer(answer);
+  } finally {
+    rl.close();
   }
-  return false;
 }
 
 async function createApiClient(): Promise<ApiClient> {
