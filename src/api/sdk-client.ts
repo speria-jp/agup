@@ -1,4 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { AgentCreateParams, AgentUpdateParams } from "@anthropic-ai/sdk/resources/beta/agents/agents.js";
+import type { SkillCreateParams } from "@anthropic-ai/sdk/resources/beta/skills/skills.js";
+import type { VersionCreateParams } from "@anthropic-ai/sdk/resources/beta/skills/versions.js";
+import type { EnvironmentCreateParams, EnvironmentUpdateParams } from "@anthropic-ai/sdk/resources/beta/environments.js";
 import type { ApiClient, ApiAgent, ApiSkill, ApiSkillVersion, ApiEnvironment } from "./interface.ts";
 
 const MAX_RETRIES = 3;
@@ -14,66 +18,60 @@ export class SdkApiClient implements ApiClient {
   agents = {
     create: async (params: Record<string, unknown>): Promise<ApiAgent> => {
       const result = await this.withRetry(() =>
-        (this.client.beta as unknown as { agents: { create: (p: Record<string, unknown>) => Promise<{ id: string; version: number }> } }).agents.create(params),
+        this.client.beta.agents.create(params as unknown as AgentCreateParams),
       );
       return { id: result.id, version: result.version };
     },
 
     update: async (id: string, params: Record<string, unknown>): Promise<ApiAgent> => {
       const result = await this.withRetry(() =>
-        (this.client.beta as unknown as { agents: { update: (id: string, p: Record<string, unknown>) => Promise<{ id: string; version: number }> } }).agents.update(id, params),
+        this.client.beta.agents.update(id, params as unknown as AgentUpdateParams),
       );
       return { id: result.id, version: result.version };
     },
 
     archive: async (id: string): Promise<void> => {
-      await this.withRetry(() =>
-        (this.client.beta as unknown as { agents: { archive: (id: string) => Promise<void> } }).agents.archive(id),
-      );
+      await this.withRetry(() => this.client.beta.agents.archive(id));
     },
   };
 
   skills = {
     create: async (params: Record<string, unknown>): Promise<ApiSkill> => {
       const result = await this.withRetry(() =>
-        (this.client.beta as unknown as { skills: { create: (p: Record<string, unknown>) => Promise<{ id: string }> } }).skills.create(params),
+        this.client.beta.skills.create(params as SkillCreateParams),
       );
       return { id: result.id };
     },
 
     createVersion: async (skillId: string, params: Record<string, unknown>): Promise<ApiSkillVersion> => {
       const result = await this.withRetry(() =>
-        (this.client.beta as unknown as { skills: { versions: { create: (id: string, p: Record<string, unknown>) => Promise<{ skill_id: string; version_id: string }> } } }).skills.versions.create(skillId, params),
+        this.client.beta.skills.versions.create(skillId, params as VersionCreateParams),
       );
-      return { skill_id: result.skill_id, version_id: result.version_id };
+      return { skill_id: result.skill_id, version_id: result.version };
     },
 
     delete: async (skillId: string): Promise<void> => {
-      await this.withRetry(() =>
-        (this.client.beta as unknown as { skills: { delete: (id: string) => Promise<void> } }).skills.delete(skillId),
-      );
+      await this.withRetry(() => this.client.beta.skills.delete(skillId));
     },
   };
 
   environments = {
     create: async (params: Record<string, unknown>): Promise<ApiEnvironment> => {
       const result = await this.withRetry(() =>
-        (this.client.beta as unknown as { environments: { create: (p: Record<string, unknown>) => Promise<{ id: string }> } }).environments.create(params),
+        this.client.beta.environments.create(params as unknown as EnvironmentCreateParams),
       );
       return { id: result.id };
     },
 
     update: async (id: string, params: Record<string, unknown>): Promise<ApiEnvironment> => {
       const result = await this.withRetry(() =>
-        (this.client.beta as unknown as { environments: { update: (id: string, p: Record<string, unknown>) => Promise<{ id: string }> } }).environments.update(id, params),
+        this.client.beta.environments.update(id, params as EnvironmentUpdateParams),
       );
       return { id: result.id };
     },
 
     archive: async (id: string): Promise<void> => {
-      await this.withRetry(() =>
-        (this.client.beta as unknown as { environments: { archive: (id: string) => Promise<void> } }).environments.archive(id),
-      );
+      await this.withRetry(() => this.client.beta.environments.archive(id));
     },
   };
 

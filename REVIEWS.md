@@ -52,11 +52,12 @@
 
 ## 2. Design Issues / 設計上の問題
 
-### 2.1 [MEDIUM] SDK 型の `unknown` キャスト多用
+### 2.1 [MEDIUM] ~~SDK 型の `unknown` キャスト多用~~ ✅ Partially Fixed
 
 - **場所**: `src/api/sdk-client.ts` 全体
-- **問題**: `this.client.beta as unknown as { ... }` で型を手動でキャストしている。SDK のバージョンアップで API シグネチャが変わった場合にコンパイルエラーが出ない。
-- **改善案**: SDK の beta 型定義を確認し、より安全な型アクセスを検討。少なくとも integration test で実 API 呼び出しが型レベルで正しいことを確認する仕組みが欲しい。
+- **問題**: `this.client.beta as unknown as { ... }` で型を手動でキャストしていた。SDK のバージョンアップで API シグネチャが変わった場合にコンパイルエラーが出ない。
+- **対応**: SDK を 0.52.0 → 0.90.0 にアップデートし、beta API の公式型定義を利用するよう書き換え。返り値の型は SDK が保証するようになった。
+- **残課題**: `ApiClient` interface が `Record<string, unknown>` を受け取る設計のため、SDK メソッド呼び出し時に params の `as unknown as XxxParams` キャストが3箇所残る。Apply Layer が動的に params を組み立てる（`deepResolveRefs`）ためコンパイル時に具体型が確定しない。将来的にリソースタイプごとに型付き params builder を導入すれば除去可能。
 
 ### 2.2 [LOW] `parseState` にバリデーションがない
 
