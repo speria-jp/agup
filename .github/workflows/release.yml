@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+
+      - name: Pack @agup/core
+        run: bun pm pack --destination "$GITHUB_WORKSPACE/dist" --quiet
+        working-directory: packages/core
+
+      - name: Pack @agup/cli
+        run: bun pm pack --destination "$GITHUB_WORKSPACE/dist" --quiet
+        working-directory: packages/cli
+
+      - name: Publish @agup/core
+        run: npm publish dist/agup-core-*.tgz --provenance --access public
+
+      - name: Publish @agup/cli
+        run: npm publish dist/agup-cli-*.tgz --provenance --access public
