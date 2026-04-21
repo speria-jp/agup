@@ -24,8 +24,8 @@ jobs:
 
       - name: Publish @agup/core
         working-directory: packages/core
-        run: npm publish "$(bun pm pack | tail -1)" --provenance --access public
+        run: npm publish "$(bun pm pack | grep '\.tgz$')" --provenance --access public
 
       - name: Publish @agup/cli
         working-directory: packages/cli
-        run: npm publish "$(bun pm pack | tail -1)" --provenance --access public
+        run: npm publish "$(bun pm pack | grep '\.tgz$')" --provenance --access public
