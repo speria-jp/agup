@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Declarative CLI for managing Claude Managed Agent resources",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
     "agup": "./dist/index.js"
