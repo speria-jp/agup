@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "dev": "bun run src/index.ts",
-    "test": "bun test",
+    "test": "bun test --path-ignore-patterns tests/e2e",
+    "test:e2e": "bun test tests/e2e",
     "lint": "bunx oxlint src/",
     "typecheck": "tsc --noEmit"
   },

@@ -11,18 +11,23 @@ import type { Operation, Plan, StateFile } from "./types.ts";
 const DEFAULT_CONFIG_PATH = "agup.yaml";
 const DEFAULT_STATE_PATH = "agup.state.json";
 
+function hasFlag(flag: string): boolean {
+  return process.argv.includes(flag);
+}
+
 async function main() {
   const command = process.argv[2];
+  const autoApprove = hasFlag("--yes");
 
   switch (command) {
     case "plan":
       await runPlan();
       break;
     case "apply":
-      await runApply();
+      await runApply(autoApprove);
       break;
     case "destroy":
-      await runDestroy();
+      await runDestroy(autoApprove);
       break;
     case "state":
       await runState();
@@ -64,7 +69,7 @@ async function runPlan() {
   printPlan(plan);
 }
 
-async function runApply() {
+async function runApply(autoApprove = false) {
   const configPath = path.resolve(DEFAULT_CONFIG_PATH);
   const statePath = path.resolve(DEFAULT_STATE_PATH);
   const basePath = path.dirname(configPath);
@@ -83,10 +88,12 @@ async function runApply() {
   printPlan(plan);
   console.log("");
 
-  const confirmed = await confirm("Do you want to apply these changes?");
-  if (!confirmed) {
-    console.log("Apply cancelled.");
-    return;
+  if (!autoApprove) {
+    const confirmed = await confirm("Do you want to apply these changes?");
+    if (!confirmed) {
+      console.log("Apply cancelled.");
+      return;
+    }
   }
 
   const apiClient = await createApiClient();
@@ -102,7 +109,7 @@ async function runApply() {
   console.log(`\nApply complete! ${result.applied} operation(s) applied.`);
 }
 
-async function runDestroy() {
+async function runDestroy(autoApprove = false) {
   const statePath = path.resolve(DEFAULT_STATE_PATH);
   const state = await loadState(statePath);
 
@@ -127,10 +134,12 @@ async function runDestroy() {
   printPlan(plan);
   console.log("");
 
-  const confirmed = await confirm("Do you want to destroy all resources?");
-  if (!confirmed) {
-    console.log("Destroy cancelled.");
-    return;
+  if (!autoApprove) {
+    const confirmed = await confirm("Do you want to destroy all resources?");
+    if (!confirmed) {
+      console.log("Destroy cancelled.");
+      return;
+    }
   }
 
   const apiClient = await createApiClient();
