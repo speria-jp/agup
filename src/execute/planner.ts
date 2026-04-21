@@ -95,7 +95,7 @@ export async function generatePlan(
           });
         } else if (existing.last_applied_hash !== hash) {
           operations.push({
-            type: "create_version",
+            type: "update",
             resource: "skill",
             name,
             id: existing.id,

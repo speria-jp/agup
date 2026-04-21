@@ -3,7 +3,6 @@ export type ResourceType = "environment" | "skill" | "agent";
 export type Operation =
   | { type: "create"; resource: ResourceType; name: string; params: Record<string, unknown> }
   | { type: "update"; resource: ResourceType; name: string; id: string; params: Record<string, unknown> }
-  | { type: "create_version"; resource: "skill"; name: string; id: string; params: Record<string, unknown> }
   | { type: "destroy"; resource: ResourceType; name: string; id: string };
 
 export interface Plan {

@@ -179,7 +179,6 @@ function operationSymbol(op: Operation): string {
   switch (op.type) {
     case "create": return "+";
     case "update": return "~";
-    case "create_version": return "^";
     case "destroy": return "-";
   }
 }
@@ -188,7 +187,6 @@ function operationDetail(op: Operation): string {
   switch (op.type) {
     case "create": return " (create)";
     case "update": return " (update)";
-    case "create_version": return " (new version)";
     case "destroy": return " (destroy)";
   }
 }

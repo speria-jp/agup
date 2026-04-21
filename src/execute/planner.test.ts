@@ -109,7 +109,7 @@ environments:
     expect(plan.operations[0]!.resource).toBe("environment");
   });
 
-  test("X-4: skill file change generates create_version", async () => {
+  test("X-4: skill file change generates update", async () => {
     const config = parseYaml(`
 skills:
   search:
@@ -136,7 +136,7 @@ skills:
     });
 
     expect(plan.operations.length).toBe(1);
-    expect(plan.operations[0]!.type).toBe("create_version");
+    expect(plan.operations[0]!.type).toBe("update");
   });
 
   test("X-6: resource removed from YAML generates destroy", async () => {

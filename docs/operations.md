@@ -8,7 +8,6 @@ type ResourceType = "environment" | "skill" | "agent";
 type Operation =
   | { type: "create"; resource: ResourceType; name: string; params: Record<string, unknown> }
   | { type: "update"; resource: ResourceType; name: string; id: string; params: Record<string, unknown> }
-  | { type: "create_version"; resource: "skill"; name: string; id: string; params: Record<string, unknown> }
   | { type: "destroy"; resource: ResourceType; name: string; id: string };
 ```
 
@@ -46,7 +45,7 @@ create と同じ構造。omit したフィールドは既存値保持。
 | Operation | API | 備考 |
 |-----------|-----|------|
 | create | `POST /v1/skills` | ファイルアップロード含む |
-| create_version | `POST /v1/skills/{id}/versions` | ファイル変更時 |
+| update | `POST /v1/skills/{id}/versions` | ファイル変更時。Apply Layer が create_version API にマッピング |
 | destroy | `DELETE /v1/skills/{id}` | レスポンス: `{ id, type: "skill_deleted" }` |
 
 #### create params
@@ -58,7 +57,7 @@ create と同じ構造。omit したフィールドは既存値保持。
 }
 ```
 
-#### create_version params
+#### update params
 
 ```typescript
 {
@@ -68,8 +67,8 @@ create と同じ構造。omit したフィールドは既存値保持。
 
 #### 変更検知
 
-- `display_title` 変更 → delete + create（update API がないため）
-- ファイル内容変更 → create_version
+- `display_title` 変更 → Execution Layer が `destroy` + `create` の 2 Operation に展開（update API がないため）
+- ファイル内容変更 → `update` Operation（Apply Layer が `POST /v1/skills/{id}/versions` にマッピング）
 
 ### Agent
 

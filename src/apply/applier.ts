@@ -51,18 +51,8 @@ async function applyOperation(
       return setEntry(state, key, entry);
     }
     case "update": {
-      const entry = await updateResource(operation.resource, operation.id, params, dependsOn, state, apiClient);
+      const entry = await updateResource(operation.resource, operation.name, operation.id, params, dependsOn, state, apiClient);
       return setEntry(state, key, entry);
-    }
-    case "create_version": {
-      const result = await apiClient.skills.createVersion(operation.name, operation.id, params);
-      const existing = state.resources[key] as SkillEntry;
-      const updated: SkillEntry = {
-        ...existing,
-        latest_version: result.version_id,
-        last_applied_hash: computeHash(params),
-      };
-      return setEntry(state, key, updated);
     }
     case "destroy": {
       await destroyResource(operation.resource, operation.id, apiClient);
@@ -178,20 +168,30 @@ async function createResource(
 
 async function updateResource(
   resource: string,
+  name: string,
   id: string,
   params: Record<string, unknown>,
   dependsOn: string[],
   state: StateFile,
   apiClient: ApiClient,
 ): Promise<ResourceEntry> {
-  const key = Object.keys(state.resources).find((k) => state.resources[k]!.id === id);
-  const existing = key ? state.resources[key] : undefined;
+  const key = `${resource}.${name}`;
+  const existing = state.resources[key];
   const hash = computeHash(params);
 
   switch (resource) {
     case "environment": {
       await apiClient.environments.update(id, params);
       return { ...existing!, depends_on: dependsOn, last_applied_hash: hash } as ResourceEntry;
+    }
+    case "skill": {
+      const result = await apiClient.skills.createVersion(name, id, params);
+      const skillEntry = existing as SkillEntry;
+      return {
+        ...skillEntry,
+        latest_version: result.version_id,
+        last_applied_hash: hash,
+      };
     }
     case "agent": {
       const agentEntry = existing as AgentEntry;

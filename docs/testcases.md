@@ -52,7 +52,7 @@
 | X-1 | 新規作成 (全リソース) | Config あり, State 空 | create × 3 |
 | X-2 | 変更なし | Config と State のハッシュ一致 | operations 空 |
 | X-3 | Environment 設定変更 | ハッシュ不一致 | update × 1 |
-| X-4 | Skill ファイル変更 | ディレクトリハッシュ不一致 | create_version × 1 |
+| X-4 | Skill ファイル変更 | ディレクトリハッシュ不一致 | update × 1 |
 | X-5 | Skill display_title 変更 | title だけ変更 | destroy + create |
 | X-6 | YAML からリソース削除 | State にあるが Config にない | destroy × 1 |
 | X-7 | Agent の system が file 参照 | ファイル内容変更 | update × 1 |
@@ -93,7 +93,7 @@
 | A-1 | Environment create | `{ type: "create", resource: "environment", ... }` | `POST /v1/environments` |
 | A-2 | Environment update | `{ type: "update", resource: "environment", id: "..." }` | `POST /v1/environments/{id}` |
 | A-3 | Skill create | `{ type: "create", resource: "skill", ... }` | `POST /v1/skills` (ファイル付き) |
-| A-4 | Skill create_version | `{ type: "create_version", ... }` | `POST /v1/skills/{id}/versions` |
+| A-4 | Skill update | `{ type: "update", resource: "skill", ... }` | `POST /v1/skills/{id}/versions` |
 | A-5 | Skill destroy | `{ type: "destroy", resource: "skill", ... }` | `DELETE /v1/skills/{id}` |
 | A-6 | Agent create | `{ type: "create", resource: "agent", ... }` | `POST /v1/agents` |
 | A-7 | Agent update | `{ type: "update", resource: "agent", ... }` | `POST /v1/agents/{id}` (version 付き) |
@@ -117,7 +117,7 @@
 |---|--------|------|----------|
 | S-1 | create 成功 | | State にエントリ追加 (id, hash, created_at) |
 | S-2 | update 成功 (Agent) | | version インクリメント, hash 更新 |
-| S-3 | create_version 成功 | | latest_version 更新, hash 更新 |
+| S-3 | update 成功 (Skill) | | latest_version 更新, hash 更新 |
 | S-4 | destroy 成功 | | State からエントリ削除 |
 | S-5 | 途中失敗 (partial apply) | 3 ops 中 2 番目で失敗 | 1 番目の結果は State に保存 |
 
@@ -143,7 +143,7 @@
 
 前提: 全リソース apply 済み。Skill ディレクトリ内の SKILL.md を変更
 
-1. `plan` → `^ skill.xxx (new version)` と表示
+1. `plan` → `~ skill.xxx (update)` と表示
 2. `apply` → `POST /v1/skills/{id}/versions` 呼び出し
 3. State の `latest_version` が更新
 
@@ -205,7 +205,7 @@
 2. `apply --yes` → exit 0、リソースが作成される
 3. agup.state.json が生成され、各リソースの id が記録されている
 4. Skill ディレクトリ内のファイルを変更
-5. `plan` → create_version 操作が表示される
+5. `plan` → update 操作が表示される
 6. `apply --yes` → exit 0、新バージョンが作成される
 7. `destroy --yes` → exit 0、全リソース削除
 8. agup.state.json の resources が空になる

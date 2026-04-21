@@ -81,7 +81,7 @@ describe("Integration Scenarios", () => {
     expect(skills[0]!.skill_id).toBe("skill_1");
   });
 
-  test("S-2: skill file update triggers create_version", async () => {
+  test("S-2: skill file update triggers update", async () => {
     const state: StateFile = {
       version: 1,
       resources: {
@@ -126,7 +126,7 @@ describe("Integration Scenarios", () => {
     const { plan, result } = await runFullPipeline(FULL_YAML, state, fs, spy);
 
     const ops = plan.operations.map((o) => `${o.type}:${o.resource}.${o.name}`);
-    expect(ops).toContain("create_version:skill.search");
+    expect(ops).toContain("update:skill.search");
 
     expect(result!.applied).toBeGreaterThanOrEqual(1);
     expect(result!.error).toBeNull();

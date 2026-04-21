@@ -179,7 +179,7 @@ describe("E2E: Full Lifecycle", () => {
     expect(stdout).toContain("No changes. Infrastructure is up-to-date.");
   }, 30_000);
 
-  test("E2E-1: skill file update shows create_version", async () => {
+  test("E2E-1: skill file update shows update", async () => {
     await fs.writeFile(
       path.join(tmpDir, "skills", "greeting", "SKILL.md"),
       SKILL_CONTENT_UPDATED,
@@ -188,7 +188,7 @@ describe("E2E: Full Lifecycle", () => {
     const { exitCode, stdout } = await runCli("plan", tmpDir);
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain("^ skill.e2e-greeting (new version)");
+    expect(stdout).toContain("~ skill.e2e-greeting (update)");
   }, 30_000);
 
   test("E2E-1: apply creates new skill version", async () => {

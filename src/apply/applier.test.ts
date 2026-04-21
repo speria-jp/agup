@@ -87,7 +87,7 @@ describe("applyPlan", () => {
     expect(result.state.resources["skill.search"]!.id).toBe("skill_new");
   });
 
-  test("A-4: skill create_version", async () => {
+  test("A-4: skill update", async () => {
     const state: StateFile = {
       version: 1,
       resources: {
@@ -107,7 +107,7 @@ describe("applyPlan", () => {
       dependencies: {},
       operations: [
         {
-          type: "create_version",
+          type: "update",
           resource: "skill",
           name: "search",
           id: "skill_123",
