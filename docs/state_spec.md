@@ -1,10 +1,10 @@
 # State Specification
 
-## ファイル
+## File
 
-デフォルトパス: `./agup.state.json`
+Default path: `./agup.state.json`
 
-## フォーマット
+## Format
 
 ```jsonc
 {
@@ -22,40 +22,40 @@
 }
 ```
 
-## リソースキー
+## Resource Key
 
-`<type>.<logical-name>` の形式。例: `environment.python-data`, `skill.search-knowledge`, `agent.support-bot`
+Format: `<type>.<logical-name>`. Examples: `environment.python-data`, `skill.search-knowledge`, `agent.support-bot`
 
-## リソースエントリ
+## Resource Entry
 
-### 共通フィールド
+### Common Fields
 
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
+| Field | Type | Description |
+|-------|------|-------------|
 | type | string | `"environment"` / `"skill"` / `"agent"` |
-| logical_name | string | YAML 定義内の論理名 |
-| id | string | API から返された ID |
-| depends_on | string[] | 依存先リソースキーのリスト (例: `["skill.search"]`) |
-| created_at | string | 作成日時 (ISO8601) |
-| last_applied_hash | string | 最後に apply した設定内容のハッシュ |
+| logical_name | string | Logical name from YAML definition |
+| id | string | ID returned from the API |
+| depends_on | string[] | List of dependency resource keys (e.g. `["skill.search"]`) |
+| created_at | string | Creation timestamp (ISO8601) |
+| last_applied_hash | string | Hash of the config at last apply |
 
-### Environment 固有フィールド
+### Environment-specific Fields
 
-なし。
+None.
 
-### Skill 固有フィールド
+### Skill-specific Fields
 
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| latest_version | string | 最新バージョン ID |
+| Field | Type | Description |
+|-------|------|-------------|
+| latest_version | string | Latest version ID |
 
-### Agent 固有フィールド
+### Agent-specific Fields
 
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| version | number | 楽観的ロック用バージョン番号 |
+| Field | Type | Description |
+|-------|------|-------------|
+| version | number | Version number for optimistic locking |
 
-## State ファイル例
+## State File Example
 
 ```json
 {
@@ -91,64 +91,64 @@
 }
 ```
 
-## ハッシュ計算
+## Hash Computation
 
-`last_applied_hash` は設定内容の変更検知に使用する。
+`last_applied_hash` is used to detect config changes.
 
-### 計算対象
+### What Is Hashed
 
-| リソース | ハッシュ対象 |
-|---------|------------|
-| Environment | YAML 定義の設定値 |
-| Skill | ディレクトリ内の全ファイル内容 + `display_title` |
-| Agent | YAML 定義の設定値 + `${file(...)}` で参照されるファイル内容 |
+| Resource | Hash Target |
+|----------|-------------|
+| Environment | Config values from YAML |
+| Skill | All file contents in directory + `display_title` |
+| Agent | Config values from YAML + contents of files referenced by `${file(...)}` |
 
-### アルゴリズム
+### Algorithm
 
-1. 対象データを正規化（JSON.stringify でキーソート）
-2. SHA-256 でハッシュ化
-3. `sha256:<hex>` 形式で保存
+1. Normalize target data (JSON.stringify with sorted keys)
+2. Hash with SHA-256
+3. Store as `sha256:<hex>`
 
-### 変更検知フロー
+### Change Detection Flow
 
-1. YAML 定義を読み込み
-2. 各リソースの設定内容からハッシュを計算
-3. State 内の `last_applied_hash` と比較
-4. 不一致 → 変更あり（plan に含める）
+1. Read YAML definition
+2. Compute hash from each resource's config
+3. Compare with `last_applied_hash` in State
+4. Mismatch -> change detected (included in plan)
 
-## 依存関係の記録
+## Dependency Recording
 
-### `depends_on` フィールド
+### `depends_on` Field
 
-Apply 時に各リソースの依存先を state に記録する。依存は Plan の DAG（`${resource.name.attr}` 式から構築）から抽出する。
+Dependencies are recorded in state during apply. Dependencies are extracted from the Plan's DAG (built from `${resource.name.attr}` expressions).
 
 ```
-agent.support-bot の params に ${skill.search-knowledge.id} がある
+agent.support-bot's params contain ${skill.search-knowledge.id}
 → depends_on: ["skill.search-knowledge"]
 ```
 
-### 用途
+### Purpose
 
-- `agup destroy` コマンドで正しい削除順序を決定する（config が不要）
-- Apply 時に毎回更新される（依存が変わった場合に追従）
+- Determines correct deletion order for `agup destroy` (no config needed)
+- Updated on every apply (tracks dependency changes)
 
-### グラフ構築
+### Graph Construction
 
-`depends_on` からの逆トポロジカルソート:
-1. 全リソースをノードとする
-2. `depends_on` の各エントリをエッジとする（A depends_on B → A → B）
-3. トポロジカルソートの逆順が destroy 順
+Reverse topological sort from `depends_on`:
+1. All resources become nodes
+2. Each `depends_on` entry becomes an edge (A depends_on B → A → B)
+3. Reverse of topological sort = destroy order
 
-## 特殊ケース
+## Special Cases
 
-### State にあるが YAML にない
+### In State but not in YAML
 
-destroy 対象として plan に表示する。apply 時に削除する。
+Shown as a destroy operation in plan. Deleted during apply.
 
-### YAML にあるが State にない
+### In YAML but not in State
 
-create 対象として plan に表示する。
+Shown as a create operation in plan.
 
 ### Partial Apply
 
-apply 途中で失敗した場合、成功した Operation の結果は state に保存する。次回 plan 時に正しい差分を計算できるようにする。
+If apply fails mid-way, results of successful Operations are saved to state. This ensures the next plan correctly computes the remaining diff.

@@ -1,218 +1,218 @@
 # Test Cases
 
-## テスト戦略
+## Test Strategy
 
-| レイヤ | テスト方法 | Mock |
-|--------|-----------|------|
-| Parse/Resolve | ユニットテスト | なし (純粋関数) |
-| Execution | ユニットテスト | FileSystem を mock |
-| Apply | 統合テスト | ApiClient を mock |
+| Layer | Test Method | Mock |
+|-------|------------|------|
+| Parse/Resolve | Unit tests | None (pure functions) |
+| Execution | Unit tests | Mock FileSystem |
+| Apply | Integration tests | Mock ApiClient |
 
 ## Parse / Resolve Layer
 
-### YAML パース + バリデーション
+### YAML Parse + Validation
 
-| # | ケース | 入力 | 期待結果 |
-|---|--------|------|----------|
-| P-1 | 全リソース定義の正常パース | environments + skills + agents を含む YAML | Config オブジェクト |
-| P-2 | 空のセクション | `environments: {}` | 空の environments map |
-| P-3 | セクション省略 | agents のみ定義 | environments, skills は undefined |
-| P-4 | Agent の必須フィールド欠落 | name なしの agent | ZodError |
-| P-5 | Agent name 長すぎ | 257 文字の name | ZodError |
-| P-6 | 不正な networking type | `type: "invalid"` | ZodError |
-| P-7 | model がオブジェクト形式 | `{ id: "...", speed: "fast" }` | 正常パース |
-| P-8 | metadata の型不正 | `metadata: { key: 123 }` | ZodError |
+| # | Case | Input | Expected |
+|---|------|-------|----------|
+| P-1 | Parse all resource types | YAML with environments + skills + agents | Config object |
+| P-2 | Empty section | `environments: {}` | Empty environments map |
+| P-3 | Omitted section | Only agents defined | environments, skills are undefined |
+| P-4 | Missing required Agent field | Agent without name | ZodError |
+| P-5 | Agent name too long | 257-char name | ZodError |
+| P-6 | Invalid networking type | `type: "invalid"` | ZodError |
+| P-7 | Object-form model | `{ id: "...", speed: "fast" }` | Parsed successfully |
+| P-8 | Invalid metadata type | `metadata: { key: 123 }` | ZodError |
 
-### 式パース
+### Expression Parsing
 
-| # | ケース | 入力 | 期待結果 |
-|---|--------|------|----------|
-| E-1 | リソース参照 | `${skill.search.id}` | `{ type: "resource_ref", resource: "skill", name: "search", attr: "id" }` |
-| E-2 | ファイル参照 | `${file('./prompt.md')}` | `{ type: "file_ref", path: "./prompt.md" }` |
-| E-3 | 文字列中の式 | `"prefix ${skill.x.id} suffix"` | 前後テキスト + Expr ノード |
-| E-4 | 複数式 | `"${file('./a.md')} and ${skill.b.id}"` | 2 つの Expr ノード |
-| E-5 | 不正な式 | `${invalid}` | Error |
-| E-6 | ハイフン付き名前 | `${skill.my-skill.id}` | 正常パース |
+| # | Case | Input | Expected |
+|---|------|-------|----------|
+| E-1 | Resource reference | `${skill.search.id}` | `{ type: "resource_ref", resource: "skill", name: "search", attr: "id" }` |
+| E-2 | File reference | `${file('./prompt.md')}` | `{ type: "file_ref", path: "./prompt.md" }` |
+| E-3 | Expression in string | `"prefix ${skill.x.id} suffix"` | Text before/after + Expr node |
+| E-4 | Multiple expressions | `"${file('./a.md')} and ${skill.b.id}"` | 2 Expr nodes |
+| E-5 | Invalid expression | `${invalid}` | Error |
+| E-6 | Hyphenated name | `${skill.my-skill.id}` | Parsed successfully |
 
-### DAG 構築
+### DAG Construction
 
-| # | ケース | 入力 | 期待結果 |
-|---|--------|------|----------|
-| D-1 | 依存なし | environment + skill のみ | 順不同で実行可能 |
-| D-2 | Agent → Skill 依存 | agent が `${skill.x.id}` を参照 | skill.x → agent の順 |
-| D-3 | 循環依存 | agent.a → skill.b, skill.b → agent.a | Error: circular dependency |
-| D-4 | 複数依存 | agent が複数 skill を参照 | 全 skill → agent の順 |
+| # | Case | Input | Expected |
+|---|------|-------|----------|
+| D-1 | No dependencies | environment + skill only | Executable in any order |
+| D-2 | Agent -> Skill dependency | Agent references `${skill.x.id}` | skill.x before agent |
+| D-3 | Circular dependency | agent.a -> skill.b, skill.b -> agent.a | Error: circular dependency |
+| D-4 | Multiple dependencies | Agent references multiple skills | All skills before agent |
 
 ## Execution Layer
 
-### Plan 生成
+### Plan Generation
 
-| # | ケース | Config + State | 期待 Operations |
-|---|--------|---------------|-----------------|
-| X-1 | 新規作成 (全リソース) | Config あり, State 空 | create × 3 |
-| X-2 | 変更なし | Config と State のハッシュ一致 | operations 空 |
-| X-3 | Environment 設定変更 | ハッシュ不一致 | update × 1 |
-| X-4 | Skill ファイル変更 | ディレクトリハッシュ不一致 | update × 1 |
-| X-5 | Skill display_title 変更 | title だけ変更 | destroy + create |
-| X-6 | YAML からリソース削除 | State にあるが Config にない | destroy × 1 |
-| X-7 | Agent の system が file 参照 | ファイル内容変更 | update × 1 |
+| # | Case | Config + State | Expected Operations |
+|---|------|---------------|---------------------|
+| X-1 | New resources (all) | Config present, State empty | create x 3 |
+| X-2 | No changes | Config and State hashes match | Empty operations |
+| X-3 | Environment config change | Hash mismatch | update x 1 |
+| X-4 | Skill file change | Directory hash mismatch | update x 1 |
+| X-5 | Skill display_title change | Only title changed | destroy + create |
+| X-6 | Resource removed from YAML | In State but not in Config | destroy x 1 |
+| X-7 | Agent system with file ref | File content changed | update x 1 |
 
-### ハッシュ計算
+### Hash Computation
 
-| # | ケース | 入力 | 期待結果 |
-|---|--------|------|----------|
-| H-1 | 同一内容 → 同一ハッシュ | 同じ設定 2 回 | ハッシュ一致 |
-| H-2 | フィールド順序変更 → 同一ハッシュ | キー順だけ異なる | ハッシュ一致 |
-| H-3 | 値変更 → 異なるハッシュ | 1 フィールド変更 | ハッシュ不一致 |
-| H-4 | Skill ディレクトリ | ファイル追加 | ハッシュ不一致 |
+| # | Case | Input | Expected |
+|---|------|-------|----------|
+| H-1 | Same content -> same hash | Same config twice | Hashes match |
+| H-2 | Different field order -> same hash | Only key order differs | Hashes match |
+| H-3 | Value change -> different hash | 1 field changed | Hashes differ |
+| H-4 | Skill directory | File added | Hashes differ |
 
-### テンプレートマーカー生成
+### Template Marker Generation
 
-| # | ケース | 入力 | 期待結果 |
-|---|--------|------|----------|
-| T-1 | resource_ref 単独 | `"${skill.search.id}"` | `{ __expr: "resource_ref", ... }` マーカー |
-| T-2 | resource_ref + テキスト混在 | `"prefix ${skill.search.id} suffix"` | `{ __expr: "template", parts: [text, expr, text] }` |
-| T-3 | 複数 resource_ref 埋め込み | `"${skill.a.id} and ${skill.b.id}"` | `{ __expr: "template", parts: [expr, text, expr] }` |
-| T-4 | file_ref + resource_ref 混在 | `"${file('./x.md')} uses ${skill.s.id}"` | file 部分は解決済み文字列、resource_ref 部分は expr パート |
-| T-5 | resource_ref なしのテンプレート | `"${file('./a.md')} and ${file('./b.md')}"` | 全て解決済みの plain string (マーカーなし) |
+| # | Case | Input | Expected |
+|---|------|-------|----------|
+| T-1 | Standalone resource_ref | `"${skill.search.id}"` | `{ __expr: "resource_ref", ... }` marker |
+| T-2 | resource_ref + text mixed | `"prefix ${skill.search.id} suffix"` | `{ __expr: "template", parts: [text, expr, text] }` |
+| T-3 | Multiple resource_refs | `"${skill.a.id} and ${skill.b.id}"` | `{ __expr: "template", parts: [expr, text, expr] }` |
+| T-4 | file_ref + resource_ref mixed | `"${file('./x.md')} uses ${skill.s.id}"` | file part resolved, resource_ref part as expr |
+| T-5 | Template without resource_ref | `"${file('./a.md')} and ${file('./b.md')}"` | Fully resolved plain string (no markers) |
 
-### ${file(...)} 解決
+### ${file(...)} Resolution
 
-| # | ケース | 入力 | 期待結果 |
-|---|--------|------|----------|
-| F-1 | 正常なファイル参照 | 存在するファイルパス | ファイル内容が展開 |
-| F-2 | ファイル不存在 | 存在しないパス | Error |
-| F-3 | 相対パス解決 | `./prompts/x.md` | agup.yaml 基準で解決 |
+| # | Case | Input | Expected |
+|---|------|-------|----------|
+| F-1 | Valid file reference | Existing file path | File contents expanded |
+| F-2 | File not found | Non-existent path | Error |
+| F-3 | Relative path resolution | `./prompts/x.md` | Resolved relative to agup.yaml |
 
 ## Apply Layer
 
-### API 呼び出し
+### API Calls
 
-| # | ケース | Operation | 期待 API コール |
-|---|--------|-----------|----------------|
+| # | Case | Operation | Expected API Call |
+|---|------|-----------|-------------------|
 | A-1 | Environment create | `{ type: "create", resource: "environment", ... }` | `POST /v1/environments` |
 | A-2 | Environment update | `{ type: "update", resource: "environment", id: "..." }` | `POST /v1/environments/{id}` |
-| A-3 | Skill create | `{ type: "create", resource: "skill", ... }` | `POST /v1/skills` (ファイル付き) |
+| A-3 | Skill create | `{ type: "create", resource: "skill", ... }` | `POST /v1/skills` (with files) |
 | A-4 | Skill update | `{ type: "update", resource: "skill", ... }` | `POST /v1/skills/{id}/versions` |
 | A-5 | Skill destroy | `{ type: "destroy", resource: "skill", ... }` | `DELETE /v1/skills/{id}` |
 | A-6 | Agent create | `{ type: "create", resource: "agent", ... }` | `POST /v1/agents` |
-| A-7 | Agent update | `{ type: "update", resource: "agent", ... }` | `POST /v1/agents/{id}` (version 付き) |
+| A-7 | Agent update | `{ type: "update", resource: "agent", ... }` | `POST /v1/agents/{id}` (with version) |
 | A-8 | Agent archive | `{ type: "destroy", resource: "agent", ... }` | archive API |
 
-### ${resource...} 逐次解決
+### Sequential ${resource...} Resolution
 
-| # | ケース | 状態 | 期待結果 |
-|---|--------|------|----------|
-| R-1 | 既存リソースへの参照 | State に ID あり | State から ID 取得 |
-| R-2 | 新規リソースへの参照 | 同一 apply 内で先に create | create 結果の ID を使用 |
-| R-3 | 解決不能な参照 | 参照先が存在しない | Error |
-| R-4 | テンプレート解決 (単一 ref) | `{ __expr: "template", parts: [text, expr, text] }` | 文字列に組み立て |
-| R-5 | テンプレート解決 (複数 ref) | parts 内に複数 expr | 全て解決して結合 |
-| R-6 | テンプレート内の未解決参照 | expr の参照先が State にない | Error |
-| R-7 | ネストした params 内のテンプレート | `{ config: { url: template } }` | 再帰的に解�� |
+| # | Case | State | Expected |
+|---|------|-------|----------|
+| R-1 | Existing resource reference | ID exists in State | ID retrieved from State |
+| R-2 | New resource reference | Created earlier in same apply | ID from create result |
+| R-3 | Unresolvable reference | Reference target doesn't exist | Error |
+| R-4 | Template resolution (single ref) | `{ __expr: "template", parts: [text, expr, text] }` | Assembled string |
+| R-5 | Template resolution (multiple refs) | Multiple expr parts | All resolved and concatenated |
+| R-6 | Unresolved ref in template | expr target not in State | Error |
+| R-7 | Template nested in params | `{ config: { url: template } }` | Recursively resolved |
 
-### State 更新
+### State Updates
 
-| # | ケース | 状態 | 期待結果 |
-|---|--------|------|----------|
-| S-1 | create 成功 | | State にエントリ追加 (id, hash, created_at) |
-| S-2 | update 成功 (Agent) | | version インクリメント, hash 更新 |
-| S-3 | update 成功 (Skill) | | latest_version 更新, hash 更新 |
-| S-4 | destroy 成功 | | State からエントリ削除 |
-| S-5 | 途中失敗 (partial apply) | 3 ops 中 2 番目で失敗 | 1 番目の結果は State に保存 |
+| # | Case | State | Expected |
+|---|------|-------|----------|
+| S-1 | create success | | Entry added to State (id, hash, created_at) |
+| S-2 | update success (Agent) | | version incremented, hash updated |
+| S-3 | update success (Skill) | | latest_version updated, hash updated |
+| S-4 | destroy success | | Entry removed from State |
+| S-5 | Mid-apply failure (partial) | 2nd of 3 ops fails | 1st op result saved to State |
 
-### リトライ
+### Retry
 
-| # | ケース | API レスポンス | 期待結果 |
-|---|--------|---------------|----------|
-| RT-1 | 429 | Rate limit | リトライ後に成功 |
-| RT-2 | 500 | Server error | 最大 3 回リトライ |
-| RT-3 | 400 | Bad request | 即座にエラー停止 |
+| # | Case | API Response | Expected |
+|---|------|-------------|----------|
+| RT-1 | 429 | Rate limit | Retry and succeed |
+| RT-2 | 500 | Server error | Retry up to 3 times |
+| RT-3 | 400 | Bad request | Stop immediately with error |
 
-## シナリオテスト (インテグレーションテスト)
+## Scenario Tests (Integration Tests)
 
-### S-1: 初回デプロイ
+### S-1: Initial Deploy
 
-前提: State 空、YAML に environment + skill + agent を定義
+Precondition: State empty, YAML defines environment + skill + agent
 
-1. `plan` → 全リソース create として表示
-2. `apply` → API 呼び出し (environment → skill → agent 順)
-3. State に全リソースの ID, hash が記録される
+1. `plan` -> All resources shown as create
+2. `apply` -> API calls (environment -> skill -> agent order)
+3. State records ID and hash for all resources
 
-### S-2: Skill ファイル更新
+### S-2: Skill File Update
 
-前提: 全リソース apply 済み。Skill ディレクトリ内の SKILL.md を変更
+Precondition: All resources applied. SKILL.md modified in skill directory
 
-1. `plan` → `~ skill.xxx (update)` と表示
-2. `apply` → `POST /v1/skills/{id}/versions` 呼び出し
-3. State の `latest_version` が更新
+1. `plan` -> `~ skill.xxx (update)` shown
+2. `apply` -> `POST /v1/skills/{id}/versions` called
+3. State `latest_version` updated
 
-### S-3: Agent が新規 Skill を参照
+### S-3: Agent References New Skill
 
-前提: 既存の agent に新しい skill への参照を追加
+Precondition: New skill reference added to existing agent
 
-1. `plan` → skill: create, agent: update
-2. `apply` → skill create → 返却 ID → agent update の skill_id に使用
-3. State に新 skill 追加、agent の hash 更新
+1. `plan` -> skill: create, agent: update
+2. `apply` -> skill create -> returned ID -> used in agent update's skill_id
+3. New skill added to State, agent hash updated
 
-### S-4: リソース削除
+### S-4: Resource Deletion
 
-前提: YAML から agent の定義を削除
+Precondition: Agent definition removed from YAML
 
-1. `plan` → `- agent.xxx (destroy)` と表示
-2. `apply` → archive API 呼び出し
-3. State からエントリ削除
+1. `plan` -> `- agent.xxx (destroy)` shown
+2. `apply` -> archive API called
+3. Entry removed from State
 
-### S-5: 全リソース destroy
+### S-5: Destroy All Resources
 
-前提: 全リソース apply 済み
+Precondition: All resources applied
 
-1. `destroy` → Agent → Skill → Environment の順で削除
-2. State ファイルがクリア (空の resources)
+1. `destroy` -> Deletes in order: Agent -> Skill -> Environment
+2. State file cleared (empty resources)
 
-### S-6: Partial Apply 後のリカバリ
+### S-6: Recovery After Partial Apply
 
-前提: 3 リソースの create 中、2 番目で API エラー
+Precondition: API error on 2nd of 3 resource creates
 
-1. `apply` → 1 番目成功、2 番目失敗、3 番目未実行
-2. State には 1 番目のみ記録
-3. 再度 `plan` → 2 番目 create + 3 番目 create と表示
-4. 再度 `apply` → 残り 2 つを create
+1. `apply` -> 1st succeeds, 2nd fails, 3rd not executed
+2. State records only 1st
+3. Re-run `plan` -> Shows 2nd create + 3rd create
+4. Re-run `apply` -> Creates remaining 2
 
-### S-7: 変更なし
+### S-7: No Changes
 
-前提: 全リソース apply 済み。YAML 変更なし
+Precondition: All resources applied. No YAML changes
 
-1. `plan` → "No changes. Infrastructure is up-to-date." と表示
+1. `plan` -> "No changes. Infrastructure is up-to-date."
 
-## E2E テスト
+## E2E Tests
 
-実ファイル・実 API (Anthropic) を使った CLI レベルのテスト。
-`bun run test:e2e` で明示的に実行する (`bun test` では実行されない)。
+CLI-level tests using real files and real API (Anthropic).
+Run explicitly with `bun run test:e2e` (not included in `bun test`).
 
-### 前提条件
+### Prerequisites
 
-- 環境変数 `ANTHROPIC_API_KEY` が必須 (未設定ならエラー終了)
-- 一時ディレクトリに agup.yaml + skill ファイルを配置して実行
-- CLI は `Bun.spawn` で `bun run src/index.ts <command> --yes` を実行
-- テスト失敗時は state ファイルを残し、手動クリーンアップを案内するメッセージを表示
+- Environment variable `ANTHROPIC_API_KEY` required (exits with error if not set)
+- agup.yaml + skill files placed in a temp directory
+- CLI invoked via `Bun.spawn` running `bun run src/index.ts <command> --yes`
+- On test failure, state file is kept and a manual cleanup message is displayed
 
-### E2E-1: フルライフサイクル
+### E2E-1: Full Lifecycle
 
-前提: 一時ディレクトリに environment + skill + agent を定義した agup.yaml を配置
+Precondition: agup.yaml with environment + skill + agent placed in temp directory
 
-1. `plan` → exit 0、stdout に create 操作が表示される
-2. `apply --yes` → exit 0、リソースが作成される
-3. agup.state.json が生成され、各リソースの id が記録されている
-4. Skill ディレクトリ内のファイルを変更
-5. `plan` → update 操作が表示される
-6. `apply --yes` → exit 0、新バージョンが作成される
-7. `destroy --yes` → exit 0、全リソース削除
-8. agup.state.json の resources が空になる
+1. `plan` -> exit 0, stdout shows create operations
+2. `apply --yes` -> exit 0, resources created
+3. agup.state.json generated with IDs for each resource
+4. Modify a file in the skill directory
+5. `plan` -> update operation shown
+6. `apply --yes` -> exit 0, new version created
+7. `destroy --yes` -> exit 0, all resources deleted
+8. agup.state.json resources is empty
 
-### E2E-2: 冪等性
+### E2E-2: Idempotency
 
-前提: E2E-1 のステップ 2 完了後の状態 (全リソース apply 済み)
+Precondition: State after E2E-1 step 2 (all resources applied)
 
-1. `plan` → exit 0、"No changes. Infrastructure is up-to-date." と表示
-2. `apply --yes` → exit 0、"No changes." と表示 (API 呼び出しなし)
+1. `plan` -> exit 0, "No changes. Infrastructure is up-to-date."
+2. `apply --yes` -> exit 0, "No changes." (no API calls)

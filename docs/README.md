@@ -1,14 +1,14 @@
 # agup - Documentation
 
-Claude Managed Agent のリソースを宣言的に管理する CLI ツールの設計ドキュメント。
+Design documents for a declarative CLI tool that manages Claude Managed Agent resources.
 
 ## Index
 
-| ドキュメント | 内容 |
-|------------|------|
-| [architecture.md](./architecture.md) | 3層アーキテクチャ、DAG/依存解決、DI インターフェース、プロジェクト構造 |
-| [cli_spec.md](./cli_spec.md) | CLI コマンド仕様、出力フォーマット、終了コード |
-| [config_spec.md](./config_spec.md) | YAML スキーマ、式構文 (`${...}`)、Zod バリデーション |
-| [state_spec.md](./state_spec.md) | State ファイルフォーマット、ハッシュ計算、変更検知 |
-| [operations.md](./operations.md) | Operation 型定義、Anthropic API マッピング、実行順序、リトライ |
-| [testcases.md](./testcases.md) | レイヤ I/F ベースのテストケース + シナリオテスト |
+| Document | Contents |
+|----------|----------|
+| [architecture.md](./architecture.md) | 3-layer architecture, DAG/dependency resolution, DI interfaces, project structure |
+| [cli_spec.md](./cli_spec.md) | CLI command spec, output format, exit codes |
+| [config_spec.md](./config_spec.md) | YAML schema, expression syntax (`${...}`), Zod validation |
+| [state_spec.md](./state_spec.md) | State file format, hash computation, change detection |
+| [operations.md](./operations.md) | Operation type definitions, Anthropic API mapping, execution order, retry |
+| [testcases.md](./testcases.md) | Layer-based test cases + scenario tests |

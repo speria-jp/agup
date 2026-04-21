@@ -1,6 +1,6 @@
 # Operations Specification
 
-## Operation 型定義
+## Operation Type Definition
 
 ```typescript
 type ResourceType = "environment" | "skill" | "agent";
@@ -15,16 +15,16 @@ type Operation =
   | { type: "destroy"; resource: ResourceType; name: string; id: string };
 ```
 
-params 型の定義は `src/types.ts` を参照。
+See `src/types.ts` for params type definitions.
 
-## Operation と API のマッピング
+## Operation to API Mapping
 
 ### Environment
 
-| Operation | API | 備考 |
-|-----------|-----|------|
+| Operation | API | Notes |
+|-----------|-----|-------|
 | create | `POST /v1/environments` | |
-| update | `POST /v1/environments/{id}` | パッチセマンティクス。楽観的ロックなし |
+| update | `POST /v1/environments/{id}` | Patch semantics. No optimistic locking |
 | destroy | `POST /v1/environments/{id}` (archive) | |
 
 #### create params
@@ -44,22 +44,22 @@ params 型の定義は `src/types.ts` を参照。
 
 #### update params
 
-create と同じ構造。omit したフィールドは既存値保持。
+Same structure as create. Omitted fields retain existing values.
 
 ### Skill
 
-| Operation | API | 備考 |
-|-----------|-----|------|
-| create | `POST /v1/skills` | ファイルアップロード含む |
-| update | `POST /v1/skills/{id}/versions` | ファイル変更時。Apply Layer が create_version API にマッピング |
-| destroy | `DELETE /v1/skills/{id}` | レスポンス: `{ id, type: "skill_deleted" }` |
+| Operation | API | Notes |
+|-----------|-----|-------|
+| create | `POST /v1/skills` | Includes file upload |
+| update | `POST /v1/skills/{id}/versions` | On file changes. Apply Layer maps to create_version API |
+| destroy | `DELETE /v1/skills/{id}` | Response: `{ id, type: "skill_deleted" }` |
 
 #### create params
 
 ```typescript
 {
   display_title?: string;
-  files: File[];  // SKILL.md を含むディレクトリ内のファイル群
+  files: File[];  // Files from the directory containing SKILL.md
 }
 ```
 
@@ -71,17 +71,17 @@ create と同じ構造。omit したフィールドは既存値保持。
 }
 ```
 
-#### 変更検知
+#### Change Detection
 
-- `display_title` 変更 → Execution Layer が `destroy` + `create` の 2 Operation に展開（update API がないため）
-- ファイル内容変更 → `update` Operation（Apply Layer が `POST /v1/skills/{id}/versions` にマッピング）
+- `display_title` change -> Execution Layer expands into `destroy` + `create` (no update API exists)
+- File content change -> `update` Operation (Apply Layer maps to `POST /v1/skills/{id}/versions`)
 
 ### Agent
 
-| Operation | API | 備考 |
-|-----------|-----|------|
+| Operation | API | Notes |
+|-----------|-----|-------|
 | create | `POST /v1/agents` | |
-| update | `POST /v1/agents/{id}` | `version` フィールド必須（楽観的ロック） |
+| update | `POST /v1/agents/{id}` | `version` field required (optimistic locking) |
 | destroy | `POST /v1/agents/{id}` (archive) | |
 
 #### create params
@@ -101,48 +101,48 @@ create と同じ構造。omit したフィールドは既存値保持。
 
 #### update params
 
-create params に加えて:
+In addition to create params:
 
 ```typescript
 {
-  version: number;  // State から取得。楽観的ロック用
-  // ...create params と同じフィールド
+  version: number;  // From State. For optimistic locking
+  // ...same fields as create params
 }
 ```
 
-## 実行順序
+## Execution Order
 
-### DAG に基づくトポロジカルソート
+### Topological Sort Based on DAG
 
-Operation は依存グラフに基づきトポロジカル順に実行する。
+Operations are executed in topological order based on the dependency graph.
 
-基本的な優先度:
-1. Environment (依存なし)
-2. Skill (依存なし)
-3. Agent (Skill に依存する可能性あり)
+Default priority:
+1. Environment (no dependencies)
+2. Skill (no dependencies)
+3. Agent (may depend on Skills)
 
-### destroy の実行順序
+### Destroy Execution Order
 
-State の `depends_on` から依存グラフを構築し、create の逆順で削除する（依存する側を先に削除）。
+A dependency graph is built from State's `depends_on`, and resources are deleted in reverse create order (dependents first).
 
-- `agup apply` 内の destroy: Plan の DAG 逆順（create/update と同じ DAG から導出）
-- `agup destroy` コマンド: State の `depends_on` からグラフを構築し逆トポロジカル順で削除
+- `agup apply` destroy: Reverse of Plan's DAG order (derived from the same DAG as create/update)
+- `agup destroy` command: Builds graph from State's `depends_on` and deletes in reverse topological order
 
 ```
-例: agent.bot depends_on ["skill.search"]
-destroy 順: agent.bot → skill.search → environment.dev
+Example: agent.bot depends_on ["skill.search"]
+destroy order: agent.bot → skill.search → environment.dev
 ```
 
-### `${resource...}` の逐次解決
+### Sequential `${resource...}` Resolution
 
-Apply Layer が Operation を実行する際:
-1. Operation の params を再帰的に走査
-2. `ResourceRef` マーカーがあれば、State（既に実行済みの create 結果含む）から値を取得
-3. `Template` マーカーがあれば、各パートの AST を評価し文字列を組み立てる
-4. 解決済みの params で API 呼び出し
+When the Apply Layer executes Operations:
+1. Recursively traverse the Operation's params
+2. If a `ResourceRef` marker is found, retrieve the value from State (including results from already-executed creates)
+3. If a `Template` marker is found, evaluate each part's AST and assemble the string
+4. Call the API with resolved params
 
 ```typescript
-// 単独の resource_ref（値がそのまま置換される）
+// Standalone resource_ref (value is directly substituted)
 type ResourceRef = {
   __expr: "resource_ref";
   resource: string;
@@ -150,7 +150,7 @@ type ResourceRef = {
   attr: string;
 };
 
-// 文字列埋め込み（テキストと式が混在）
+// String embedding (text and expressions mixed)
 type TemplateRef = {
   __expr: "template";
   parts: Array<
@@ -159,17 +159,17 @@ type TemplateRef = {
   >;
 };
 
-// 式 AST ノード（将来の関数式にも対応）
+// Expression AST node (extensible for future function expressions)
 type ExprAst =
   | { type: "resource_ref"; resource: string; name: string; attr: string }
   | { type: "literal"; value: string }
   | { type: "call"; fn: string; args: ExprAst[] };
 ```
 
-## リトライ
+## Retry
 
-| HTTP Status | 挙動 |
-|-------------|------|
-| 429 | リトライ（exponential backoff） |
-| 5xx | リトライ（最大 3 回） |
-| 4xx (429 以外) | 即座にエラー表示して停止 |
+| HTTP Status | Behavior |
+|-------------|----------|
+| 429 | Retry (exponential backoff) |
+| 5xx | Retry (up to 3 times) |
+| 4xx (except 429) | Stop immediately with error |

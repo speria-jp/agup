@@ -1,22 +1,22 @@
 # CLI Specification
 
-## コマンド一覧
+## Commands
 
-| コマンド | 説明 |
-|---------|------|
-| `agup plan` | YAML 定義と現在の state を比較し、差分を表示 |
-| `agup apply` | plan の内容を実行して API に反映、state を更新 |
-| `agup destroy` | state にある全リソースを削除 |
-| `agup state` | 現在の state を表示 |
+| Command | Description |
+|---------|-------------|
+| `agup plan` | Compare YAML definitions against current state and display the diff |
+| `agup apply` | Execute the plan, call APIs, and update state |
+| `agup destroy` | Delete all resources in state |
+| `agup state` | Display the current state file |
 
 ## `agup plan`
 
-YAML 定義を読み込み、現在の state と比較して差分を表示する。API 呼び出しは行わない。
+Reads the YAML definition, compares it with the current state, and displays the diff. No API calls are made.
 
-- YAML から消えたリソースは destroy として表示
-- 未解決の `${resource...}` 参照は `(pending)` と表示
+- Resources removed from YAML are shown as destroy operations
+- Unresolved `${resource...}` references are shown as `(pending)`
 
-### 出力フォーマット
+### Output Format
 
 ```
 agup plan
@@ -39,60 +39,60 @@ agup plan
 Plan: 1 to create, 2 to update, 1 to destroy.
 ```
 
-### 記号凡例
+### Symbol Legend
 
-| 記号 | 意味 |
-|------|------|
+| Symbol | Meaning |
+|--------|---------|
 | `+` | create |
 | `~` | update |
-| `^` | new version (Skill のみ) |
+| `^` | new version (Skill only) |
 | `-` | destroy |
 
 ## `agup apply`
 
-plan の内容を実行し、API に反映して state を更新する。
+Executes the plan, calls APIs, and updates state.
 
-- create / update / destroy 全てを含む
-- トポロジカル順に実行（依存先から順に作成）
-- 途中で失敗した場合、成功した分の state は保存する（partial apply）
+- Includes create, update, and destroy operations
+- Executes in topological order (dependencies first)
+- On failure, saves state for successful operations (partial apply)
 
-### 実行フロー
+### Execution Flow
 
-1. plan を生成（`agup plan` と同等）
-2. plan の内容を表示
-3. 確認プロンプト表示（`Proceed? [y/N]`）
-4. 承認後、Operation を順次実行
-5. 各 Operation 完了ごとに state を更新
+1. Generate plan (same as `agup plan`)
+2. Display plan
+3. Show confirmation prompt (`Proceed? [y/N]`)
+4. After approval, execute Operations sequentially
+5. Update state after each Operation completes
 
 ## `agup destroy`
 
-state にある全リソースを削除する。
+Deletes all resources in state.
 
-- State の `depends_on` から依存グラフを構築し、逆トポロジカル順で削除（依存する側から先に削除）
-- 削除後、state ファイルをクリア
+- Builds dependency graph from State's `depends_on` and deletes in reverse topological order (dependents first)
+- Clears state file after deletion
 
 ## `agup state`
 
-現在の state ファイルの内容を表示する。
+Displays the current state file contents.
 
-### サブコマンド (Phase 2)
+### Subcommands (Phase 2)
 
-| サブコマンド | 説明 |
-|------------|------|
-| `agup state refresh` | API から最新状態を取得して state を再構築 |
+| Subcommand | Description |
+|------------|-------------|
+| `agup state refresh` | Fetch latest state from API and rebuild state file |
 
-## グローバルオプション (Phase 2)
+## Global Options (Phase 2)
 
-| オプション | 説明 |
-|-----------|------|
-| `--config <path>` | 設定ファイルパス (デフォルト: `./agup.yaml`) |
-| `--state <path>` | State ファイルパス (デフォルト: `./agup.state.json`) |
-| `-y, --yes` | 確認プロンプトをスキップ (CI/CD 向け) |
+| Option | Description |
+|--------|-------------|
+| `--config <path>` | Config file path (default: `./agup.yaml`) |
+| `--state <path>` | State file path (default: `./agup.state.json`) |
+| `-y, --yes` | Skip confirmation prompts (for CI/CD) |
 
-## 終了コード
+## Exit Codes
 
-| コード | 意味 |
-|--------|------|
-| 0 | 成功 |
-| 1 | エラー（バリデーション失敗、API エラーなど） |
-| 2 | plan に差分あり（CI での drift 検知用、Phase 2） |
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | Error (validation failure, API error, etc.) |
+| 2 | Plan has diff (for CI drift detection, Phase 2) |

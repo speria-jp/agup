@@ -2,118 +2,118 @@
 
 ## Overview
 
-agup は 3 層アーキテクチャで構成される。各層は明確な入出力を持ち、DI によりテスタブルに保つ。
+agup is built on a 3-layer architecture. Each layer has well-defined inputs and outputs, and uses DI to remain testable.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Parse / Resolve Layer (Pure・決定的)                         │
-│                                                              │
-│  入力: YAML 文字列                                            │
-│  出力: Config (バリデーション済み、Expr ノード含む、DAG 付き)     │
+│  Parse / Resolve Layer (Pure, deterministic)                │
+│                                                             │
+│  Input:  YAML string                                        │
+│  Output: Config (validated, with Expr nodes, DAG attached)  │
 └──────────────────────────────┬──────────────────────────────┘
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Execution Layer (IO: FileSystem)                            │
-│                                                              │
-│  入力: Config + State + FileSystem                            │
-│  出力: Plan (Operation リスト)                                │
+│  Execution Layer (IO: FileSystem)                           │
+│                                                             │
+│  Input:  Config + State + FileSystem                        │
+│  Output: Plan (list of Operations)                          │
 └──────────────────────────────┬──────────────────────────────┘
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Apply Layer (IO: ApiClient)                                 │
-│                                                              │
-│  入力: Plan + ApiClient + State                               │
-│  出力: 更新された State                                       │
+│  Apply Layer (IO: ApiClient)                                │
+│                                                             │
+│  Input:  Plan + ApiClient + State                           │
+│  Output: Updated State                                      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## レイヤ詳細
+## Layer Details
 
 ### Parse / Resolve Layer
 
-純粋関数で構成される。外部 IO を一切行わない。
+Composed of pure functions. No external IO.
 
-責務:
-1. YAML パース
-2. Zod スキーマによるバリデーション
-3. `${...}` 式のパース → Expr ノード生成（未解決のまま保持）
-4. Expr ノードから依存グラフ (DAG) 構築
+Responsibilities:
+1. YAML parsing
+2. Zod schema validation
+3. Parse `${...}` expressions into Expr nodes (kept unresolved)
+4. Build dependency graph (DAG) from Expr nodes
 
 ### Execution Layer
 
-FileSystem インターフェース経由でファイル IO を行う。
+Performs file IO via the FileSystem interface.
 
-責務:
-1. `${file(...)}` の解決（FileSystem 経由でファイル読み込み）
-2. Skill ディレクトリのファイル読み込み
-3. ハッシュ計算（設定内容 + ファイル内容）
-4. State との diff → Operation 導出
+Responsibilities:
+1. Resolve `${file(...)}` (read files via FileSystem)
+2. Read Skill directory files
+3. Compute hashes (config values + file contents)
+4. Diff against State -> derive Operations
 
 ### Apply Layer
 
-ApiClient インターフェース経由で API 呼び出しを行う。
+Makes API calls via the ApiClient interface.
 
-責務:
-1. Operation をトポロジカル順に実行
-2. `${resource...}` を逐次解決（create 結果の ID を後続に伝播）
-3. API 呼び出し (ApiClient 経由)
-4. State 更新・書き込み
+Responsibilities:
+1. Execute Operations in topological order
+2. Sequentially resolve `${resource...}` (propagate IDs from create results to downstream ops)
+3. API calls (via ApiClient)
+4. State update and persistence
 
-## CLI コマンドと層の対応
-
-```
-agup plan  → Parse/Resolve + Execution → Plan を表示
-agup apply → Parse/Resolve + Execution + Apply → State 更新
-```
-
-## DAG と依存解決
-
-### リソース間の依存関係
+## CLI Commands and Layer Mapping
 
 ```
-Environment (依存なし)
-Skill (依存なし)
-Agent (→ Skill に依存する可能性あり)
+agup plan  → Parse/Resolve + Execution → Display Plan
+agup apply → Parse/Resolve + Execution + Apply → Update State
 ```
 
-`${resource.name.attr}` 式がリソース間の依存を生む。DAG をトポロジカルソートして実行順を決定する。
+## DAG and Dependency Resolution
 
-### 依存情報の永続化
+### Resource Dependencies
 
-Apply 時に各リソースの `depends_on` を State に保存する。これにより `agup destroy` コマンドが config なしで正しい削除順序を決定できる。
+```
+Environment (no dependencies)
+Skill (no dependencies)
+Agent (may depend on Skills)
+```
 
-- `agup apply`: Config の DAG から依存情報を取得し、State に記録
-- `agup destroy`: State の `depends_on` からグラフを構築し、逆トポロジカル順で削除
+`${resource.name.attr}` expressions create inter-resource dependencies. The DAG is topologically sorted to determine execution order.
 
-### 循環依存の検出
+### Dependency Persistence
 
-トポロジカルソート時に循環を検出した場合はエラー終了する。
+During apply, each resource's `depends_on` is saved to State. This allows `agup destroy` to determine the correct deletion order without needing the config file.
+
+- `agup apply`: Extracts dependency info from the config DAG and records it in State
+- `agup destroy`: Builds a graph from State's `depends_on` and deletes in reverse topological order
+
+### Circular Dependency Detection
+
+If a cycle is detected during topological sort, the tool exits with an error.
 
 ```
 Error: Circular dependency detected: agent.a → skill.b → agent.a
 ```
 
-### 式の解決タイミング
+### Expression Resolution Timing
 
-| 式 | 解決タイミング | 解決するレイヤ |
-|----|--------------|--------------|
-| `${file(...)}` | plan 時 | Execution Layer |
-| `${resource.name.attr}` (単独、既存) | plan 時 | Execution Layer (State から取得) |
-| `${resource.name.attr}` (単独、新規) | apply 時 | Apply Layer (create 後に解決) |
-| `${resource.name.attr}` (文字列埋め込み) | apply 時 | Apply Layer (template マーカー経由) |
+| Expression | Resolution Timing | Resolved By |
+|------------|-------------------|-------------|
+| `${file(...)}` | plan time | Execution Layer |
+| `${resource.name.attr}` (standalone, existing) | plan time | Execution Layer (from State) |
+| `${resource.name.attr}` (standalone, new) | apply time | Apply Layer (after create) |
+| `${resource.name.attr}` (embedded in string) | apply time | Apply Layer (via template marker) |
 
-plan 表示時、未解決の参照は `(pending)` と表示する。
+At plan display time, unresolved references are shown as `(pending)`.
 
-### マーカー形式
+### Marker Format
 
-Execution Layer → Apply Layer 間で未解決の式を伝播するため、JSON マーカーを使用する:
+JSON markers are used to propagate unresolved expressions from Execution Layer to Apply Layer:
 
-- 単独 resource_ref: `{ __expr: "resource_ref", resource, name, attr }`
-- 文字列埋め込み: `{ __expr: "template", parts: [{ type: "text", value } | { type: "expr", ast }] }`
+- Standalone resource_ref: `{ __expr: "resource_ref", resource, name, attr }`
+- Embedded in string: `{ __expr: "template", parts: [{ type: "text", value } | { type: "expr", ast }] }`
 
-Apply Layer の `deepResolveRefs` が両形式を再帰的に解決する。AST ノードとして式を保持するため、将来的な関数式の追加にも対応可能。
+The Apply Layer's `deepResolveRefs` recursively resolves both formats. Expressions are kept as AST nodes, making it extensible for future function expressions.
 
-## DI インターフェース
+## DI Interfaces
 
 ### FileSystem
 
@@ -146,40 +146,39 @@ interface ApiClient {
 }
 ```
 
-## プロジェクト構造
+## Project Structure
 
 ```
 agup/
 ├── src/
-│   ├── index.ts              # CLI エントリーポイント
+│   ├── index.ts              # CLI entry point
 │   ├── parse/
-│   │   ├── parser.ts         # YAML パース + 式パース → Config + Expr ノード
-│   │   ├── schema.ts         # Zod スキーマ定義 & バリデーション
-│   │   ├── expression.ts     # ${...} 式のパーサー
-│   │   └── dag.ts            # 依存グラフ構築 & トポロジカルソート
+│   │   ├── parser.ts         # YAML parse + expression parse -> Config + Expr nodes
+│   │   ├── schema.ts         # Zod schema definitions & validation
+│   │   ├── expression.ts     # ${...} expression parser
+│   │   └── dag.ts            # Dependency graph construction & topological sort
 │   ├── execute/
-│   │   ├── planner.ts        # ${file(...)} 解決 + ハッシュ計算 + diff → Plan 生成
-│   │   └── hash.ts           # ハッシュ計算 (設定内容 + ファイル内容)
+│   │   ├── planner.ts        # ${file(...)} resolution + hash computation + diff -> Plan
+│   │   └── hash.ts           # Hash computation (config values + file contents)
 │   ├── apply/
-│   │   └── applier.ts        # Plan 実行 (${resource...} 解決 + API 呼び出し + State 更新)
+│   │   └── applier.ts        # Plan execution (${resource...} resolution + API calls + State update)
 │   ├── api/
-│   │   ├── interface.ts      # ApiClient インターフェース定義
-│   │   └── sdk-client.ts     # Anthropic SDK による ApiClient 実装
+│   │   ├── interface.ts      # ApiClient interface definition
+│   │   └── sdk-client.ts     # ApiClient implementation using Anthropic SDK
 │   ├── state/
-│   │   └── store.ts          # State ファイル読み書き
+│   │   └── store.ts          # State file read/write
 │   └── fs/
-│       └── interface.ts      # FileSystem インターフェース & 実装
+│       └── interface.ts      # FileSystem interface & implementation
 ├── tests/
-│   ├── parse/
-│   ├── execute/
-│   └── apply/
+│   ├── integration/
+│   └── e2e/
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
 
-## エラーハンドリング
+## Error Handling
 
-- **API エラー**: リトライ（429, 5xx）、それ以外は即座にエラー表示して停止
-- **部分適用**: apply 途中で失敗した場合、成功した分の state は保存する（partial apply）
-- **State 不整合**: `agup state refresh` で API から最新状態を取得して state を再構築
+- **API errors**: Retry on 429 and 5xx; all other errors are displayed and execution stops immediately
+- **Partial apply**: If apply fails mid-way, state for successful operations is saved (partial apply)
+- **State inconsistency**: `agup state refresh` fetches the latest state from the API and rebuilds the state file

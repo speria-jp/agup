@@ -85,6 +85,19 @@ Use `${...}` expressions in YAML string values:
 
 See [docs/config_spec.md](docs/config_spec.md) for the full YAML schema.
 
+## Features
+
+- [x] Declarative YAML configuration for environments, skills, and agents
+- [x] Plan/apply workflow with confirmation prompt
+- [x] Expression syntax: `${file(...)}` for file injection, `${resource.name.id}` for cross-resource references
+- [x] Dependency graph (DAG) with automatic topological ordering
+- [x] Hash-based change detection (only applies what changed)
+- [x] Partial apply: saves progress on failure, resumes on next run
+- [x] `destroy` command with reverse-dependency ordering
+- [ ] `--config` / `--state` options for custom file paths
+- [ ] `state refresh` to sync state from remote API
+- [ ] Drift detection exit code for CI (`plan` returns exit 2 on diff)
+
 ## How It Works
 
 agup follows a plan/apply workflow:
@@ -93,7 +106,7 @@ agup follows a plan/apply workflow:
 2. **Plan** - Compare config against `agup.state.json` (hash-based diff)
 3. **Apply** - Execute API calls in dependency order, update state after each operation
 
-State is stored in `agup.state.json` (add to `.gitignore`).
+State is stored in `agup.state.json`. You can commit it to share state across a team, or add it to `.gitignore` for local-only management.
 
 ## Development
 

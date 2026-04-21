@@ -1,132 +1,132 @@
 # TODO - Implementation Steps
 
-## 1. プロジェクトセットアップ
+## 1. Project Setup
 
-- [x] `bun init` + package.json 設定
-- [x] TypeScript 設定 (tsconfig.json)
-- [x] 依存インストール: zod, yaml, @anthropic-ai/sdk
-- [x] Linter 設定 (oxlint)
-- [x] ディレクトリ構造作成 (src/, tests/)
-- [x] テスト環境セットアップ (bun test)
+- [x] `bun init` + package.json configuration
+- [x] TypeScript configuration (tsconfig.json)
+- [x] Install dependencies: zod, yaml, @anthropic-ai/sdk
+- [x] Linter setup (oxlint)
+- [x] Directory structure (src/, tests/)
+- [x] Test environment setup (bun test)
 
-## 2. 型定義・インターフェース
+## 2. Type Definitions & Interfaces
 
-- [x] リソース型定義 (ResourceType, Operation, Plan)
-- [x] FileSystem インターフェース (src/fs/interface.ts)
-- [x] ApiClient インターフェース (src/api/interface.ts)
-- [x] State 型定義 (StateFile, ResourceEntry)
+- [x] Resource type definitions (ResourceType, Operation, Plan)
+- [x] FileSystem interface (src/fs/interface.ts)
+- [x] ApiClient interface (src/api/interface.ts)
+- [x] State type definitions (StateFile, ResourceEntry)
 
 ## 3. Parse / Resolve Layer
 
-- [x] Zod スキーマ定義 (src/parse/schema.ts)
+- [x] Zod schema definitions (src/parse/schema.ts)
   - [x] EnvironmentConfigSchema
   - [x] SkillConfigSchema
   - [x] AgentConfigSchema
-  - [x] AgentformConfigSchema (トップレベル)
-- [x] 式パーサー (src/parse/expression.ts)
-  - [x] EXPR_PATTERN による式検出
-  - [x] file 参照パース
-  - [x] resource 参照パース
-  - [x] 文字列中の複数式対応
-- [x] YAML パーサー (src/parse/parser.ts)
-  - [x] YAML 読み込み → Zod バリデーション
-  - [x] 文字列値内の式をパースして Expr ノード生成
-- [x] DAG 構築 (src/parse/dag.ts)
-  - [x] リソース参照から依存エッジ抽出
-  - [x] トポロジカルソート
-  - [x] 循環依存検出
+  - [x] AgentformConfigSchema (top-level)
+- [x] Expression parser (src/parse/expression.ts)
+  - [x] Expression detection via EXPR_PATTERN
+  - [x] file reference parsing
+  - [x] resource reference parsing
+  - [x] Multiple expressions in a single string
+- [x] YAML parser (src/parse/parser.ts)
+  - [x] YAML loading + Zod validation
+  - [x] Parse expressions in string values into Expr nodes
+- [x] DAG construction (src/parse/dag.ts)
+  - [x] Extract dependency edges from resource references
+  - [x] Topological sort
+  - [x] Circular dependency detection
 
-## 4. State 管理
+## 4. State Management
 
-- [x] State ファイル読み込み (src/state/store.ts)
-- [x] State ファイル書き込み
-- [x] リソースエントリの追加/更新/削除
+- [x] State file reading (src/state/store.ts)
+- [x] State file writing
+- [x] Resource entry add/update/delete
 
 ## 5. Execution Layer
 
-- [x] ハッシュ計算 (src/execute/hash.ts)
-  - [x] 設定値の正規化 (キーソート JSON)
-  - [x] SHA-256 ハッシュ
-  - [x] Skill ディレクトリのハッシュ (全ファイル)
+- [x] Hash computation (src/execute/hash.ts)
+  - [x] Value normalization (key-sorted JSON)
+  - [x] SHA-256 hashing
+  - [x] Skill directory hashing (all files)
 - [x] Planner (src/execute/planner.ts)
-  - [x] ${file(...)} 解決
-  - [x] State との diff (ハッシュ比較)
-  - [x] create Operation 導出 (State にない)
-  - [x] update Operation 導出 (ハッシュ不一致)
-  - [x] create_version Operation 導出 (Skill ファイル変更)
-  - [x] destroy Operation 導出 (YAML にない)
-  - [x] Skill display_title 変更 → destroy + create
+  - [x] ${file(...)} resolution
+  - [x] State diff (hash comparison)
+  - [x] create Operation derivation (not in State)
+  - [x] update Operation derivation (hash mismatch)
+  - [x] create_version Operation derivation (Skill file changes)
+  - [x] destroy Operation derivation (not in YAML)
+  - [x] Skill display_title change -> destroy + create
 
 ## 6. Apply Layer
 
 - [x] Applier (src/apply/applier.ts)
-  - [x] Operation のトポロジカル順実行
-  - [x] ${resource...} の逐次解決
+  - [x] Execute Operations in topological order
+  - [x] Sequential ${resource...} resolution
   - [x] Environment create/update/archive
   - [x] Skill create/createVersion/delete
-  - [x] Agent create/update/archive (version 付き)
-  - [x] State 更新 (各 Operation 完了ごと)
-  - [x] Partial apply (失敗時に成功分を保存)
+  - [x] Agent create/update/archive (with version)
+  - [x] State update (after each Operation)
+  - [x] Partial apply (save successful ops on failure)
 
-## 7. ApiClient 実装
+## 7. ApiClient Implementation
 
-- [x] Anthropic SDK ラッパー (src/api/sdk-client.ts)
+- [x] Anthropic SDK wrapper (src/api/sdk-client.ts)
   - [x] Environment API (create, update, archive)
   - [x] Skill API (create, createVersion, delete)
   - [x] Agent API (create, update, archive)
-  - [x] リトライ (429, 5xx)
+  - [x] Retry (429, 5xx)
 
 ## 8. CLI
 
-- [x] エントリーポイント (src/index.ts)
-- [x] `plan` コマンド
-  - [x] YAML 読み込み → Parse → Execution → Plan 表示
-  - [x] 差分フォーマット出力 (+, ~, ^, -)
-- [x] `apply` コマンド
-  - [x] plan 表示 → 確認プロンプト → Apply 実行
-- [x] `destroy` コマンド
-  - [x] State 読み込み → 逆順で全リソース削除
-- [x] `state` コマンド
-  - [x] State ファイル表示
+- [x] Entry point (src/index.ts)
+- [x] `plan` command
+  - [x] YAML loading -> Parse -> Execution -> Plan display
+  - [x] Diff format output (+, ~, ^, -)
+- [x] `apply` command
+  - [x] Show plan -> confirmation prompt -> Apply execution
+- [x] `destroy` command
+  - [x] Load State -> delete all resources in reverse order
+- [x] `state` command
+  - [x] Display State file
 
-## 9. テスト
+## 9. Tests
 
-- [x] Parse Layer テスト
-  - [x] スキーマバリデーション (P-1 ~ P-8)
-  - [x] 式パース (E-1 ~ E-6)
+- [x] Parse Layer tests
+  - [x] Schema validation (P-1 ~ P-8)
+  - [x] Expression parsing (E-1 ~ E-6)
   - [x] DAG (D-1 ~ D-4)
-- [x] Execution Layer テスト (mock FileSystem)
-  - [x] Plan 生成 (X-1 ~ X-4, X-6, X-7)
-  - [x] ハッシュ計算 (H-1 ~ H-4)
-  - [x] ファイル解決 (F-1 ~ F-3)
-- [x] Apply Layer テスト (mock ApiClient)
-  - [x] API 呼び出し (A-1, A-3 ~ A-6, A-8)
-  - [x] 参照解決 (R-2 ~ R-3)
-  - [x] State 更新 (S-1, S-3 ~ S-5)
+- [x] Execution Layer tests (mock FileSystem)
+  - [x] Plan generation (X-1 ~ X-4, X-6, X-7)
+  - [x] Hash computation (H-1 ~ H-4)
+  - [x] File resolution (F-1 ~ F-3)
+- [x] Apply Layer tests (mock ApiClient)
+  - [x] API calls (A-1, A-3 ~ A-6, A-8)
+  - [x] Reference resolution (R-2 ~ R-3)
+  - [x] State updates (S-1, S-3 ~ S-5)
 
-## 10. 残テスト
+## 10. Remaining Tests
 
-- [x] X-5: Skill display_title 変更テスト追加
-- [x] A-2: Environment update テスト追加
-- [x] A-7: Agent update テスト追加
-- [x] R-1: 既存リソース参照テスト追加
-- [x] S-2: Agent update 時の version increment テスト追加
-- [x] E2E シナリオテスト (S-1 ~ S-7)
-- [ ] リトライテスト (RT-1 ~ RT-3)
+- [x] X-5: Skill display_title change test
+- [x] A-2: Environment update test
+- [x] A-7: Agent update test
+- [x] R-1: Existing resource reference test
+- [x] S-2: Agent update version increment test
+- [x] E2E scenario tests (S-1 ~ S-7)
+- [ ] Retry tests (RT-1 ~ RT-3)
 
-## 11. npx 対応・公開準備
+## 11. npx Support & Release Preparation
 
-- [x] `Bun.CryptoHasher` → `node:crypto` の `createHash` に置き換え (src/execute/hash.ts)
-- [x] `bun build --target=node` でバンドルスクリプト追加 (package.json `build`)
-- [x] package.json: `bin` フィールド追加 (`"bin": { "agup": "./dist/index.js" }`)
-- [x] package.json: `files` フィールド追加 (`["dist"]`)
-- [x] package.json: `private: true` 削除
-- [x] ビルド成果物の動作確認 (`node dist/index.js plan`)
-- [x] README.md 作成
-- [x] LICENSE 追加
+- [x] Replace `Bun.CryptoHasher` with `node:crypto` `createHash` (src/execute/hash.ts)
+- [x] Add `bun build --target=node` build script (package.json `build`)
+- [x] package.json: add `bin` field (`"bin": { "agup": "./dist/index.js" }`)
+- [x] package.json: add `files` field (`["dist"]`)
+- [x] package.json: remove `private: true`
+- [x] Verify build artifact (`node dist/index.js plan`)
+- [x] README.md
+- [x] LICENSE
 - [ ] npm publish
 
-## 12. Review fix
+## 12. Review Fixes
 
-- **File Read**: `${file(...)}` は basePath からの相対パスで解決されるが、`../../../etc/passwd` のようなパストラバーサルの防御がない。信頼できる入力前提であれば問題ないが、共有環境での利用を想定する場合は basePath 外へのアクセスを制限すべき。
-- **State File**: 認証情報は含まないことを spec にポリシーとして明記
+- **File Read**: `${file(...)}` resolves paths relative to basePath, but there is no defense against path traversal (e.g. `../../../etc/passwd`). Not an issue with trusted input, but access should be restricted to within basePath for shared environments.
+- **State File**: Document as a policy in the spec that state files must never contain credentials.
