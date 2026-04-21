@@ -118,10 +118,14 @@ Operation は依存グラフに基づきトポロジカル順に実行する。
 
 ### destroy の実行順序
 
-create の逆順。依存される側を後に削除する。
+State の `depends_on` から依存グラフを構築し、create の逆順で削除する（依存する側を先に削除）。
+
+- `agup apply` 内の destroy: Plan の DAG 逆順（create/update と同じ DAG から導出）
+- `agup destroy` コマンド: State の `depends_on` からグラフを構築し逆トポロジカル順で削除
 
 ```
-destroy 順: Agent → Skill → Environment
+例: agent.bot depends_on ["skill.search"]
+destroy 順: agent.bot → skill.search → environment.dev
 ```
 
 ### `${resource...}` の逐次解決

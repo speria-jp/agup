@@ -35,6 +35,7 @@
 | type | string | `"environment"` / `"skill"` / `"agent"` |
 | logical_name | string | YAML 定義内の論理名 |
 | id | string | API から返された ID |
+| depends_on | string[] | 依存先リソースキーのリスト (例: `["skill.search"]`) |
 | created_at | string | 作成日時 (ISO8601) |
 | last_applied_hash | string | 最後に apply した設定内容のハッシュ |
 
@@ -64,6 +65,7 @@
       "type": "environment",
       "logical_name": "python-data",
       "id": "env_01ABC...",
+      "depends_on": [],
       "created_at": "2026-04-20T10:00:00Z",
       "last_applied_hash": "sha256:a1b2c3..."
     },
@@ -71,6 +73,7 @@
       "type": "skill",
       "logical_name": "search-knowledge",
       "id": "skill_01XYZ...",
+      "depends_on": [],
       "latest_version": "1759178010641129",
       "created_at": "2026-04-20T10:00:00Z",
       "last_applied_hash": "sha256:d4e5f6..."
@@ -79,6 +82,7 @@
       "type": "agent",
       "logical_name": "support-bot",
       "id": "agent_01DEF...",
+      "depends_on": ["skill.search-knowledge"],
       "version": 3,
       "created_at": "2026-04-20T10:00:00Z",
       "last_applied_hash": "sha256:g7h8i9..."
@@ -111,6 +115,29 @@
 2. 各リソースの設定内容からハッシュを計算
 3. State 内の `last_applied_hash` と比較
 4. 不一致 → 変更あり（plan に含める）
+
+## 依存関係の記録
+
+### `depends_on` フィールド
+
+Apply 時に各リソースの依存先を state に記録する。依存は Plan の DAG（`${resource.name.attr}` 式から構築）から抽出する。
+
+```
+agent.support-bot の params に ${skill.search-knowledge.id} がある
+→ depends_on: ["skill.search-knowledge"]
+```
+
+### 用途
+
+- `agup destroy` コマンドで正しい削除順序を決定する（config が不要）
+- Apply 時に毎回更新される（依存が変わった場合に追従）
+
+### グラフ構築
+
+`depends_on` からの逆トポロジカルソート:
+1. 全リソースをノードとする
+2. `depends_on` の各エントリをエッジとする（A depends_on B → A → B）
+3. トポロジカルソートの逆順が destroy 順
 
 ## 特殊ケース
 

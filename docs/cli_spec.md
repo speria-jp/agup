@@ -68,7 +68,7 @@ plan の内容を実行し、API に反映して state を更新する。
 
 state にある全リソースを削除する。
 
-- 依存関係の逆順で削除（Agent → Skill → Environment）
+- State の `depends_on` から依存グラフを構築し、逆トポロジカル順で削除（依存する側から先に削除）
 - 削除後、state ファイルをクリア
 
 ## `agup state`

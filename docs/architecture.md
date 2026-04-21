@@ -78,6 +78,13 @@ Agent (→ Skill に依存する可能性あり)
 
 `${resource.name.attr}` 式がリソース間の依存を生む。DAG をトポロジカルソートして実行順を決定する。
 
+### 依存情報の永続化
+
+Apply 時に各リソースの `depends_on` を State に保存する。これにより `agup destroy` コマンドが config なしで正しい削除順序を決定できる。
+
+- `agup apply`: Config の DAG から依存情報を取得し、State に記録
+- `agup destroy`: State の `depends_on` からグラフを構築し、逆トポロジカル順で削除
+
 ### 循環依存の検出
 
 トポロジカルソート時に循環を検出した場合はエラー終了する。
