@@ -12,6 +12,7 @@ describe("parseCliArgs", () => {
         configPath: "configs/dev.yaml",
         statePath: "tmp/dev.state.json",
       },
+      showHelp: false,
     });
   });
 
@@ -25,6 +26,7 @@ describe("parseCliArgs", () => {
         configPath: "configs/dev.yaml",
         statePath: "tmp/dev.state.json",
       },
+      showHelp: false,
     });
   });
 
@@ -36,6 +38,19 @@ describe("parseCliArgs", () => {
         configPath: "agup.yaml",
         statePath: "agup.state.json",
       },
+      showHelp: false,
+    });
+  });
+
+  test("treats help flag as usage output trigger", () => {
+    expect(parseCliArgs(["--help"])).toEqual({
+      command: null,
+      options: {
+        autoApprove: false,
+        configPath: "agup.yaml",
+        statePath: "agup.state.json",
+      },
+      showHelp: true,
     });
   });
 
@@ -49,5 +64,17 @@ describe("parseCliArgs", () => {
 
   test("throws on unknown options", () => {
     expect(() => parseCliArgs(["plan", "--wat"])).toThrow("Unknown option: --wat");
+  });
+
+  test("throws when help flag is combined with another command", () => {
+    expect(() => parseCliArgs(["plan", "--help"])).toThrow(
+      "The help flag cannot be combined with another command.",
+    );
+  });
+
+  test("throws when version and help flags are combined", () => {
+    expect(() => parseCliArgs(["--help", "--version"])).toThrow(
+      "The version flag cannot be combined with the help flag.",
+    );
   });
 });
