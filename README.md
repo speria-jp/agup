@@ -66,7 +66,19 @@ agup apply    # Apply changes
 | `destroy` | Destroy all managed resources     |
 | `state`   | Show current state                |
 
-Use `--yes` to skip confirmation prompts.
+Global options:
+
+- `-v, --version` - Show version
+- `-y, --yes` - Skip confirmation prompts
+- `--config <path>` - Use a custom config file path
+- `--state <path>` - Use a custom state file path
+
+Examples:
+
+```bash
+agup --config ./configs/prod.yaml plan
+agup apply --yes --state ./tmp/agup.state.json
+```
 
 ## Configuration
 
@@ -94,7 +106,7 @@ See [docs/config_spec.md](docs/config_spec.md) for the full YAML schema.
 - [x] Hash-based change detection (only applies what changed)
 - [x] Partial apply: saves progress on failure, resumes on next run
 - [x] `destroy` command with reverse-dependency ordering
-- [ ] `--config` / `--state` options for custom file paths
+- [x] `--config` / `--state` options for custom file paths
 - [ ] `state refresh` to sync state from remote API
 - [ ] Drift detection exit code for CI (`plan` returns exit 2 on diff)
 

@@ -216,3 +216,12 @@ Precondition: State after E2E-1 step 2 (all resources applied)
 
 1. `plan` -> exit 0, "No changes. Infrastructure is up-to-date."
 2. `apply --yes` -> exit 0, "No changes." (no API calls)
+
+### E2E-3: Custom Config And State Paths
+
+Precondition: Config file is placed at a non-default path and state file path is also overridden
+
+1. `--config <custom-path> plan --state <custom-state-path>` -> exit 0, create operations shown
+2. Relative `${file(...)}`
+   and skill directory references are resolved relative to the custom config file location
+3. `state --state <custom-state-path>` -> exit 0, custom state file is read instead of `./agup.state.json`

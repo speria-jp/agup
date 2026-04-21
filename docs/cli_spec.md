@@ -104,11 +104,6 @@ agup 0.1.0
 |--------|-------------|
 | `-v, --version` | Display the CLI version |
 | `-y, --yes` | Skip confirmation prompts (for CI/CD) |
-
-### Global Options (Phase 2)
-
-| Option | Description |
-|--------|-------------|
 | `--config <path>` | Config file path (default: `./agup.yaml`) |
 | `--state <path>` | State file path (default: `./agup.state.json`) |
 

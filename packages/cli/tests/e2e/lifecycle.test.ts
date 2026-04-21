@@ -19,8 +19,7 @@ function ensureApiKey() {
   }
 }
 
-async function runCli(command: string, cwd: string): Promise<{ exitCode: number; stdout: string; stderr: string }> {
-  const args = command.split(" ");
+async function runCli(args: string[], cwd: string): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const proc = Bun.spawn(["bun", "run", CLI_PATH, ...args], {
     cwd,
     env: { ...process.env },
@@ -119,7 +118,7 @@ describe("E2E: Full Lifecycle", () => {
   });
 
   test("E2E-1: plan shows create operations", async () => {
-    const { exitCode, stdout } = await runCli("plan", tmpDir);
+    const { exitCode, stdout } = await runCli(["plan"], tmpDir);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("+ environment.e2e-test (create)");
@@ -128,7 +127,7 @@ describe("E2E: Full Lifecycle", () => {
   }, 30_000);
 
   test("E2E-1: apply creates all resources", async () => {
-    const { exitCode, stdout, stderr } = await runCli("apply --yes", tmpDir);
+    const { exitCode, stdout, stderr } = await runCli(["apply", "--yes"], tmpDir);
 
     if (exitCode !== 0) {
       console.error("apply failed:", stderr, stdout);
@@ -166,14 +165,14 @@ describe("E2E: Full Lifecycle", () => {
   }, 30_000);
 
   test("E2E-2: idempotent - no changes on re-plan", async () => {
-    const { exitCode, stdout } = await runCli("plan", tmpDir);
+    const { exitCode, stdout } = await runCli(["plan"], tmpDir);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("No changes. Infrastructure is up-to-date.");
   }, 30_000);
 
   test("E2E-2: idempotent - apply reports no changes", async () => {
-    const { exitCode, stdout } = await runCli("apply --yes", tmpDir);
+    const { exitCode, stdout } = await runCli(["apply", "--yes"], tmpDir);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("No changes. Infrastructure is up-to-date.");
@@ -185,14 +184,14 @@ describe("E2E: Full Lifecycle", () => {
       SKILL_CONTENT_UPDATED,
     );
 
-    const { exitCode, stdout } = await runCli("plan", tmpDir);
+    const { exitCode, stdout } = await runCli(["plan"], tmpDir);
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("~ skill.e2e-greeting (update)");
   }, 30_000);
 
   test("E2E-1: apply creates new skill version", async () => {
-    const { exitCode, stdout, stderr } = await runCli("apply --yes", tmpDir);
+    const { exitCode, stdout, stderr } = await runCli(["apply", "--yes"], tmpDir);
 
     if (exitCode !== 0) {
       console.error("apply failed:", stderr, stdout);
@@ -205,7 +204,7 @@ describe("E2E: Full Lifecycle", () => {
   }, 60_000);
 
   test("E2E-1: destroy removes all resources", async () => {
-    const { exitCode, stdout, stderr } = await runCli("destroy --yes", tmpDir);
+    const { exitCode, stdout, stderr } = await runCli(["destroy", "--yes"], tmpDir);
 
     if (exitCode !== 0) {
       console.error("destroy failed:", stderr, stdout);
@@ -223,5 +222,31 @@ describe("E2E: Full Lifecycle", () => {
 
     const env = await apiClient.beta.environments.retrieve(resourceIds.envId);
     expect(env.archived_at).not.toBeNull();
+  }, 30_000);
+
+  test("E2E-3: plan/apply/state support custom config and state paths", async () => {
+    const customDir = await fs.mkdtemp(path.join(os.tmpdir(), "agup-e2e-custom-"));
+    const configPath = path.join(customDir, "configs", "agup.custom.yaml");
+    const statePath = path.join(customDir, "tmp", "agup.custom.state.json");
+
+    await fs.mkdir(path.dirname(configPath), { recursive: true });
+    await fs.mkdir(path.dirname(statePath), { recursive: true });
+    await setupFixtures(customDir);
+    await fs.writeFile(path.join(customDir, "agup.yaml"), "");
+    await fs.writeFile(
+      configPath,
+      agupYaml()
+        .replace("./skills/greeting", "../skills/greeting")
+        .replace("./prompts/system.md", "../prompts/system.md")
+        .trimStart(),
+    );
+
+    const planResult = await runCli(["--config", configPath, "plan", "--state", statePath], customDir);
+    expect(planResult.exitCode).toBe(0);
+    expect(planResult.stdout).toContain("+ environment.e2e-test (create)");
+
+    const stateResult = await runCli(["state", "--state", statePath], customDir);
+    expect(stateResult.exitCode).toBe(0);
+    expect(stateResult.stdout).toContain("\"resources\": {}");
   }, 30_000);
 });

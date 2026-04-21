@@ -17,31 +17,107 @@ import type { ApiClient, Operation, Plan, StateFile } from "@agup/core";
 const DEFAULT_CONFIG_PATH = "agup.yaml";
 const DEFAULT_STATE_PATH = "agup.state.json";
 
-function hasFlag(flag: string): boolean {
-  return process.argv.includes(flag);
+type CommandName = "plan" | "apply" | "destroy" | "state" | "version";
+
+type CliOptions = {
+  autoApprove: boolean;
+  configPath: string;
+  statePath: string;
+};
+
+type ParsedCliArgs = {
+  command: CommandName | null;
+  options: CliOptions;
+};
+
+function isCommandName(value: string): value is CommandName {
+  return value === "plan"
+    || value === "apply"
+    || value === "destroy"
+    || value === "state"
+    || value === "version";
+}
+
+export function parseCliArgs(argv: string[]): ParsedCliArgs {
+  const options: CliOptions = {
+    autoApprove: false,
+    configPath: DEFAULT_CONFIG_PATH,
+    statePath: DEFAULT_STATE_PATH,
+  };
+  let command: CommandName | null = null;
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!;
+
+    if (arg === "-v" || arg === "--version") {
+      if (command && command !== "version") {
+        throw new Error("The version flag cannot be combined with another command.");
+      }
+      command = "version";
+      continue;
+    }
+
+    if (arg === "-y" || arg === "--yes") {
+      options.autoApprove = true;
+      continue;
+    }
+
+    if (arg === "--config") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("-")) {
+        throw new Error("Missing value for --config.");
+      }
+      options.configPath = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg === "--state") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("-")) {
+        throw new Error("Missing value for --state.");
+      }
+      options.statePath = value;
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith("-")) {
+      throw new Error(`Unknown option: ${arg}`);
+    }
+
+    if (!isCommandName(arg)) {
+      throw new Error(`Unknown command: ${arg}`);
+    }
+
+    if (command) {
+      throw new Error(`Multiple commands specified: ${command} and ${arg}`);
+    }
+
+    command = arg;
+  }
+
+  return { command, options };
 }
 
 async function main() {
-  const command = process.argv[2];
-  const autoApprove = hasFlag("--yes");
-
-  if (command === "version" || hasFlag("--version") || hasFlag("-v")) {
-    await printVersion();
-    return;
-  }
+  const { command, options } = parseCliArgs(process.argv.slice(2));
 
   switch (command) {
+    case "version":
+      await printVersion();
+      break;
     case "plan":
-      await runPlan();
+      await runPlan(options.configPath, options.statePath);
       break;
     case "apply":
-      await runApply(autoApprove);
+      await runApply(options, options.autoApprove);
       break;
     case "destroy":
-      await runDestroy(autoApprove);
+      await runDestroy(options.statePath, options.autoApprove);
       break;
     case "state":
-      await runState();
+      await runState(options.statePath);
       break;
     default:
       printUsage();
@@ -67,10 +143,20 @@ async function saveState(statePath: string, state: StateFile): Promise<void> {
   await fs.writeFile(statePath, serializeState(state));
 }
 
-async function runPlan() {
-  const configPath = path.resolve(DEFAULT_CONFIG_PATH);
-  const statePath = path.resolve(DEFAULT_STATE_PATH);
-  const basePath = path.dirname(configPath);
+function resolveCliPaths(configPath: string, statePath: string) {
+  const resolvedConfigPath = path.resolve(configPath);
+  const resolvedStatePath = path.resolve(statePath);
+  const basePath = path.dirname(resolvedConfigPath);
+
+  return {
+    configPath: resolvedConfigPath,
+    statePath: resolvedStatePath,
+    basePath,
+  };
+}
+
+async function runPlan(configPathArg: string, statePathArg: string) {
+  const { configPath, statePath, basePath } = resolveCliPaths(configPathArg, statePathArg);
 
   const config = await loadConfig(configPath);
   const state = await loadState(statePath);
@@ -80,10 +166,8 @@ async function runPlan() {
   printPlan(plan);
 }
 
-async function runApply(autoApprove = false) {
-  const configPath = path.resolve(DEFAULT_CONFIG_PATH);
-  const statePath = path.resolve(DEFAULT_STATE_PATH);
-  const basePath = path.dirname(configPath);
+async function runApply(options: CliOptions, autoApprove = false) {
+  const { configPath, statePath, basePath } = resolveCliPaths(options.configPath, options.statePath);
 
   const config = await loadConfig(configPath);
   const state = await loadState(statePath);
@@ -120,8 +204,8 @@ async function runApply(autoApprove = false) {
   console.log(`\nApply complete! ${result.applied} operation(s) applied.`);
 }
 
-async function runDestroy(autoApprove = false) {
-  const statePath = path.resolve(DEFAULT_STATE_PATH);
+async function runDestroy(statePathArg: string, autoApprove = false) {
+  const statePath = path.resolve(statePathArg);
   const state = await loadState(statePath);
 
   const keys = Object.keys(state.resources);
@@ -165,8 +249,8 @@ async function runDestroy(autoApprove = false) {
   console.log("\nAll resources destroyed.");
 }
 
-async function runState() {
-  const statePath = path.resolve(DEFAULT_STATE_PATH);
+async function runState(statePathArg: string) {
+  const statePath = path.resolve(statePathArg);
   const state = await loadState(statePath);
   console.log(JSON.stringify(state, null, 2));
 }
@@ -236,10 +320,15 @@ Commands:
 Options:
   -v, --version   Show version
   -y, --yes       Skip confirmation prompts
+  --config <path> Config file path (default: ./agup.yaml)
+  --state <path>  State file path (default: ./agup.state.json)
 `);
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(message);
+    process.exit(1);
+  });
+}
