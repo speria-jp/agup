@@ -36,7 +36,7 @@ TDD workflow: write tests first, then implementation.
 
 - Test cases defined in docs/testcases.md
 - Each layer uses DI to swap in mocks for testing
-- `bun test` runs all tests
+- `bun run test` runs all tests
 - All comments, variable names, and messages in code must be in English
 
 ## Commands
@@ -44,7 +44,8 @@ TDD workflow: write tests first, then implementation.
 ```bash
 bun run dev            # Run from source
 bun run build          # Build for Node.js
-bun test               # Run tests
+bun run test           # Run tests (excludes e2e)
+bun run test:e2e       # Run e2e tests (requires ANTHROPIC_API_KEY)
 bun run lint           # Lint (oxlint)
 ```
 

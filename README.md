@@ -111,7 +111,8 @@ State is stored in `agup.state.json`. You can commit it to share state across a 
 ## Development
 
 ```bash
-bun test          # Run unit/integration tests
+bun run test      # Run unit/integration tests (excludes e2e)
+bun run test:e2e  # Run e2e tests (requires ANTHROPIC_API_KEY)
 bun run dev       # Run from source
 bun run build     # Build for Node.js
 bun run lint      # Lint with oxlint
