@@ -98,10 +98,20 @@ agup --version
 agup 0.1.0
 ```
 
+## `agup --help`
+
+Displays CLI usage information and exits successfully.
+
+```
+agup --help
+Usage: agup <command> [options]
+```
+
 ## Global Options
 
 | Option | Description |
 |--------|-------------|
+| `-h, --help` | Display help |
 | `-v, --version` | Display the CLI version |
 | `-y, --yes` | Skip confirmation prompts (for CI/CD) |
 | `--config <path>` | Config file path (default: `./agup.yaml`) |

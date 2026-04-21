@@ -28,6 +28,7 @@ type CliOptions = {
 type ParsedCliArgs = {
   command: CommandName | null;
   options: CliOptions;
+  showHelp: boolean;
 };
 
 function isCommandName(value: string): value is CommandName {
@@ -45,11 +46,23 @@ export function parseCliArgs(argv: string[]): ParsedCliArgs {
     statePath: DEFAULT_STATE_PATH,
   };
   let command: CommandName | null = null;
+  let showHelp = false;
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]!;
 
+    if (arg === "-h" || arg === "--help") {
+      if (command && command !== "version") {
+        throw new Error("The help flag cannot be combined with another command.");
+      }
+      showHelp = true;
+      continue;
+    }
+
     if (arg === "-v" || arg === "--version") {
+      if (showHelp) {
+        throw new Error("The version flag cannot be combined with the help flag.");
+      }
       if (command && command !== "version") {
         throw new Error("The version flag cannot be combined with another command.");
       }
@@ -97,11 +110,16 @@ export function parseCliArgs(argv: string[]): ParsedCliArgs {
     command = arg;
   }
 
-  return { command, options };
+  return { command, options, showHelp };
 }
 
 async function main() {
-  const { command, options } = parseCliArgs(process.argv.slice(2));
+  const { command, options, showHelp } = parseCliArgs(process.argv.slice(2));
+
+  if (showHelp) {
+    printUsage();
+    return;
+  }
 
   switch (command) {
     case "version":
@@ -308,7 +326,7 @@ async function printVersion() {
 
 function printUsage() {
   console.log(`
-Usage: agup <command>
+Usage: agup <command> [options]
 
 Commands:
   plan      Show execution plan
@@ -318,6 +336,7 @@ Commands:
   version   Show version
 
 Options:
+  -h, --help      Show help
   -v, --version   Show version
   -y, --yes       Skip confirmation prompts
   --config <path> Config file path (default: ./agup.yaml)
