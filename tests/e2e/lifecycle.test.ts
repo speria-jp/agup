@@ -5,6 +5,7 @@ import * as os from "node:os";
 import Anthropic from "@anthropic-ai/sdk";
 
 const CLI_PATH = path.resolve(import.meta.dir, "../../src/index.ts");
+const RUN_ID = Date.now().toString(36);
 
 let tmpDir: string;
 let apiClient: Anthropic;
@@ -39,36 +40,52 @@ async function readState(cwd: string) {
   return JSON.parse(content);
 }
 
-const AGUP_YAML = `
+function agupYaml() {
+  return `
 environments:
   e2e-test:
-    name: agup E2E Test Environment
+    name: agup-e2e-${RUN_ID}
     config:
       type: cloud
 
 skills:
   e2e-greeting:
-    display_title: E2E Greeting Skill
+    display_title: agup-e2e-skill-${RUN_ID}
     directory: ./skills/greeting
 
 agents:
   e2e-bot:
-    name: agup E2E Test Agent
-    model: claude-sonnet-4-6-20250514
+    name: agup-e2e-bot-${RUN_ID}
+    model: claude-sonnet-4-6
     system: "\${file('./prompts/system.md')}"
     skills:
       - type: custom
         skill_id: "\${skill.e2e-greeting.id}"
 `;
+}
 
 const SYSTEM_PROMPT = "You are a test agent created by agup E2E tests. Respond briefly.";
-const SKILL_CONTENT = "# Greeting Skill\n\nA simple greeting skill for E2E testing.";
-const SKILL_CONTENT_UPDATED = "# Greeting Skill\n\nUpdated content for version test.";
+
+const SKILL_CONTENT = `---
+name: e2e-greeting
+description: A greeting skill for E2E testing
+---
+# Greeting Skill
+
+A simple greeting skill for E2E testing.`;
+
+const SKILL_CONTENT_UPDATED = `---
+name: e2e-greeting
+description: A greeting skill for E2E testing
+---
+# Greeting Skill
+
+Updated content for version test.`;
 
 async function setupFixtures(dir: string) {
   await fs.mkdir(path.join(dir, "skills", "greeting"), { recursive: true });
   await fs.mkdir(path.join(dir, "prompts"), { recursive: true });
-  await fs.writeFile(path.join(dir, "agup.yaml"), AGUP_YAML.trimStart());
+  await fs.writeFile(path.join(dir, "agup.yaml"), agupYaml().trimStart());
   await fs.writeFile(path.join(dir, "prompts", "system.md"), SYSTEM_PROMPT);
   await fs.writeFile(path.join(dir, "skills", "greeting", "SKILL.md"), SKILL_CONTENT);
 }
@@ -134,16 +151,16 @@ describe("E2E: Full Lifecycle", () => {
   test("E2E-1: verify resources exist on remote", async () => {
     const env = await apiClient.beta.environments.retrieve(resourceIds.envId);
     expect(env.id).toBe(resourceIds.envId);
-    expect(env.name).toBe("agup E2E Test Environment");
+    expect(env.name).toBe(`agup-e2e-${RUN_ID}`);
     expect(env.archived_at).toBeNull();
 
     const skill = await apiClient.beta.skills.retrieve(resourceIds.skillId);
     expect(skill.id).toBe(resourceIds.skillId);
-    expect(skill.display_title).toBe("E2E Greeting Skill");
+    expect(skill.display_title).toBe(`agup-e2e-skill-${RUN_ID}`);
 
     const agent = await apiClient.beta.agents.retrieve(resourceIds.agentId);
     expect(agent.id).toBe(resourceIds.agentId);
-    expect(agent.name).toBe("agup E2E Test Agent");
+    expect(agent.name).toBe(`agup-e2e-bot-${RUN_ID}`);
     expect(agent.system).toBe(SYSTEM_PROMPT);
     expect(agent.archived_at).toBeNull();
   }, 30_000);

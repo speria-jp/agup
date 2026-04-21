@@ -23,8 +23,8 @@ export interface ApiClient {
     archive(id: string): Promise<void>;
   };
   skills: {
-    create(params: Record<string, unknown>): Promise<ApiSkill>;
-    createVersion(skillId: string, params: Record<string, unknown>): Promise<ApiSkillVersion>;
+    create(name: string, params: Record<string, unknown>): Promise<ApiSkill>;
+    createVersion(name: string, skillId: string, params: Record<string, unknown>): Promise<ApiSkillVersion>;
     delete(skillId: string): Promise<void>;
   };
   environments: {

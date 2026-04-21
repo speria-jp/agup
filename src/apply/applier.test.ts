@@ -18,8 +18,8 @@ function mockApiClient(overrides?: Partial<{
       archive: async () => {},
     },
     skills: {
-      create: overrides?.skillCreate ?? (async () => ({ id: "skill_new" })),
-      createVersion: overrides?.skillCreateVersion ?? (async () => ({ skill_id: "skill_new", version_id: "v2" })),
+      create: overrides?.skillCreate ?? (async (_name) => ({ id: "skill_new" })),
+      createVersion: overrides?.skillCreateVersion ?? (async (_name, _id) => ({ skill_id: "skill_new", version_id: "v2" })),
       delete: async () => {},
     },
     environments: {

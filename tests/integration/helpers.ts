@@ -41,13 +41,13 @@ export function createSpyApiClient(options: SpyApiClientOptions = {}) {
       },
     },
     skills: {
-      async create(params) {
-        record("skills.create", [params]);
+      async create(name, params) {
+        record("skills.create", [name, params]);
         skillCounter++;
         return { id: `skill_${skillCounter}` };
       },
-      async createVersion(skillId, params) {
-        record("skills.createVersion", [skillId, params]);
+      async createVersion(name, skillId, params) {
+        record("skills.createVersion", [name, skillId, params]);
         skillVersionCounter++;
         return { skill_id: skillId, version_id: `ver_${skillVersionCounter}` };
       },

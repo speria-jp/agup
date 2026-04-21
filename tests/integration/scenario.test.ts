@@ -136,7 +136,8 @@ describe("Integration Scenarios", () => {
 
     const versionCall = spy.calls.find((c) => c.method === "skills.createVersion");
     expect(versionCall).toBeDefined();
-    expect(versionCall!.args[0]).toBe("skill_1");
+    expect(versionCall!.args[0]).toBe("search");
+    expect(versionCall!.args[1]).toBe("skill_1");
   });
 
   test("S-3: agent references newly created skill", async () => {

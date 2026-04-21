@@ -55,7 +55,7 @@ async function applyOperation(
       return setEntry(state, key, entry);
     }
     case "create_version": {
-      const result = await apiClient.skills.createVersion(operation.id, params);
+      const result = await apiClient.skills.createVersion(operation.name, operation.id, params);
       const existing = state.resources[key] as SkillEntry;
       const updated: SkillEntry = {
         ...existing,
@@ -146,7 +146,7 @@ async function createResource(
       };
     }
     case "skill": {
-      const result = await apiClient.skills.create(params);
+      const result = await apiClient.skills.create(name, params);
       const displayTitle = (params.display_title as string | undefined) ?? undefined;
       return {
         type: "skill",
