@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 ## Project Overview
 
@@ -37,15 +37,6 @@ packages/
         └── index.ts
 ```
 
-## Development Style
-
-TDD workflow: write tests first, then implementation.
-
-- Test cases defined in docs/testcases.md
-- Each layer uses DI to swap in mocks for testing
-- `bun run test` runs all tests
-- All comments, variable names, and messages in code must be in English
-
 ## Commands
 
 ```bash
@@ -56,6 +47,16 @@ bun run test:e2e       # Run e2e tests (requires ANTHROPIC_API_KEY)
 bun run lint           # Lint (oxlint)
 ```
 
-## Design Docs
+## Docs Index
 
-See docs/ for detailed design. Update docs when making changes.
+Use these documents as the primary references before making changes:
+
+| Document | Contents |
+|----------|----------|
+| [docs/architecture.md](./docs/architecture.md) | 3-layer architecture, DAG/dependency resolution, DI interfaces, project structure |
+| [docs/cli_spec.md](./docs/cli_spec.md) | CLI command spec, output format, exit codes |
+| [docs/convention.md](./docs/convention.md) | Development conventions, coding rules, documentation policy |
+| [docs/config_spec.md](./docs/config_spec.md) | YAML schema, expression syntax (`${...}`), Zod validation |
+| [docs/state_spec.md](./docs/state_spec.md) | State file format, hash computation, change detection |
+| [docs/operations.md](./docs/operations.md) | Operation type definitions, Anthropic API mapping, execution order, retry |
+| [docs/testcases.md](./docs/testcases.md) | Layer-based test cases + scenario tests |
