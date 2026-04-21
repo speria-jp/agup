@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "dev": "bun run --filter '@agup/cli' dev",
-    "build": "bun run --filter '@agup/cli' build",
+    "build": "bun run --filter '@agup/core' build && bun run --filter '@agup/cli' build",
     "test": "bun run --filter '*' test",
     "test:e2e": "bun run --filter '@agup/cli' test:e2e",
     "lint": "bunx oxlint packages/",

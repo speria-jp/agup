@@ -15,7 +15,7 @@
     "test": "echo 'no unit tests (use test:e2e for e2e tests)'",
     "test:e2e": "bun test tests/e2e",
     "typecheck": "tsc --noEmit",
-    "build": "bun build src/index.ts --target=node --outdir=dist --minify && printf '#!/usr/bin/env node\\n' | cat - dist/index.js > dist/tmp.js && mv dist/tmp.js dist/index.js && chmod +x dist/index.js"
+    "build": "bun build src/index.ts --target=node --outdir=dist --minify --external @agup/core && printf '#!/usr/bin/env node\\n' | cat - dist/index.js > dist/tmp.js && mv dist/tmp.js dist/index.js && chmod +x dist/index.js"
   },
   "dependencies": {
     "@agup/core": "workspace:*"
