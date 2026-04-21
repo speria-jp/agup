@@ -110,7 +110,8 @@ export async function generatePlan(
     for (const [name, agentConfig] of Object.entries(config.raw.agents)) {
       const key = `agent.${name}`;
       const resolved = resolvedConfigs.get(key) ?? (agentConfig as unknown as Record<string, unknown>);
-      const hash = computeHash(resolved as Record<string, unknown>);
+      const injected = injectResourceRefs(resolved as Record<string, unknown>, config, state);
+      const hash = computeHash(injected as Record<string, unknown>);
       const existing = getEntry(state, key);
 
       if (!existing) {
@@ -118,7 +119,7 @@ export async function generatePlan(
           type: "create",
           resource: "agent",
           name,
-          params: injectResourceRefs(resolved as Record<string, unknown>, config, state),
+          params: injected,
         });
       } else if (existing.last_applied_hash !== hash) {
         operations.push({
@@ -126,7 +127,7 @@ export async function generatePlan(
           resource: "agent",
           name,
           id: existing.id,
-          params: injectResourceRefs(resolved as Record<string, unknown>, config, state),
+          params: injected,
         });
       }
     }
