@@ -231,9 +231,56 @@ async function resolveStringWithExprs(
 function injectResourceRefs(
   params: Record<string, unknown>,
   _config: ParsedConfig,
-  _state: StateFile,
+  state: StateFile,
 ): Record<string, unknown> {
-  return params;
+  return resolveKnownRefs(params, state) as Record<string, unknown>;
+}
+
+function resolveKnownRefs(obj: unknown, state: StateFile): unknown {
+  if (obj === null || obj === undefined) return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => resolveKnownRefs(item, state));
+  }
+
+  if (typeof obj === "object") {
+    const record = obj as Record<string, unknown>;
+
+    if (record.__expr === "resource_ref") {
+      const key = `${record.resource}.${record.name}`;
+      const entry = state.resources[key];
+      if (!entry) return record;
+      return (entry as unknown as Record<string, unknown>)[record.attr as string];
+    }
+
+    if (record.__expr === "template") {
+      const parts = record.parts as Array<{ type: string; value?: string; ast?: Record<string, unknown> }>;
+      let allResolved = true;
+      const resolved = parts.map((part) => {
+        if (part.type === "text") return part;
+        const key = `${part.ast!.resource}.${part.ast!.name}`;
+        const entry = state.resources[key];
+        if (!entry) {
+          allResolved = false;
+          return part;
+        }
+        const value = String((entry as unknown as Record<string, unknown>)[part.ast!.attr as string]);
+        return { type: "text", value };
+      });
+      if (allResolved) {
+        return resolved.map((p) => p.value).join("");
+      }
+      return { __expr: "template", parts: resolved };
+    }
+
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(record)) {
+      result[k] = resolveKnownRefs(v, state);
+    }
+    return result;
+  }
+
+  return obj;
 }
 
 function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {

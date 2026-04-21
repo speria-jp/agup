@@ -369,6 +369,102 @@ agents:
     expect(params.system).toBe("AAA and BBB");
   });
 
+  test("R-1: existing resource ref resolved from state at plan time", async () => {
+    const config = parseYaml(`
+agents:
+  bot:
+    name: Bot
+    model: claude-sonnet-4-6-20250514
+    system: Hello
+    skills:
+      - type: custom
+        skill_id: "\${skill.search.id}"
+`);
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "skill.search": {
+          type: "skill",
+          logical_name: "search",
+          id: "skill_real_id_123",
+          depends_on: [],
+          latest_version: "v1",
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:abc",
+        },
+      },
+    };
+
+    const plan = await generatePlan(config, state, {
+      basePath: "/project",
+      fs: mockFs(),
+    });
+
+    const createOp = plan.operations.find((op) => op.resource === "agent")!;
+    const params = (createOp as { params: Record<string, unknown> }).params;
+    const skills = params.skills as { skill_id: unknown }[];
+    expect(skills[0]!.skill_id).toBe("skill_real_id_123");
+  });
+
+  test("R-1: template with existing ref resolves to string at plan time", async () => {
+    const config = parseYaml(`
+agents:
+  bot:
+    name: Bot
+    model: claude-sonnet-4-6-20250514
+    system: "Uses \${skill.search.id} for lookup"
+`);
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "skill.search": {
+          type: "skill",
+          logical_name: "search",
+          id: "skill_abc",
+          depends_on: [],
+          latest_version: "v1",
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:abc",
+        },
+      },
+    };
+
+    const plan = await generatePlan(config, state, {
+      basePath: "/project",
+      fs: mockFs(),
+    });
+
+    const createOp = plan.operations.find((op) => op.resource === "agent")!;
+    const params = (createOp as { params: Record<string, unknown> }).params;
+    expect(params.system).toBe("Uses skill_abc for lookup");
+  });
+
+  test("R-1: unresolvable ref stays as marker", async () => {
+    const config = parseYaml(`
+agents:
+  bot:
+    name: Bot
+    model: claude-sonnet-4-6-20250514
+    system: Hello
+    skills:
+      - type: custom
+        skill_id: "\${skill.unknown.id}"
+`);
+    const plan = await generatePlan(config, createEmptyState(), {
+      basePath: "/project",
+      fs: mockFs(),
+    });
+
+    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    const skills = params.skills as { skill_id: unknown }[];
+    expect(skills[0]!.skill_id).toEqual({
+      __expr: "resource_ref",
+      resource: "skill",
+      name: "unknown",
+      attr: "id",
+    });
+  });
+
   test("F-2: file not found throws error", async () => {
     const config = parseYaml(`
 agents:

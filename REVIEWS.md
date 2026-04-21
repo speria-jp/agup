@@ -65,7 +65,7 @@
 - **問題**: `JSON.parse` の結果をそのまま `StateFile` に型キャストしている。手動編集やバージョン不整合があった場合に無言で壊れたデータを読み込む。
 - **改善案**: State にも Zod スキーマを定義するか、少なくとも `version` フィールドのチェックを行う。
 
-### 2.3 [LOW] `injectResourceRefs` がスタブ
+### 2.3 [LOW] ~~`injectResourceRefs` がスタブ~~ ✅ Fixed
 
 - **場所**: `src/execute/planner.ts:210-216`
 - **問題**: 引数を受け取るだけで何もしないスタブ関数。Plan 時に既存リソースの参照を解決する役割だが未実装。
