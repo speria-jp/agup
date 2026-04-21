@@ -150,30 +150,29 @@ interface ApiClient {
 
 ```
 agup/
-├── src/
-│   ├── index.ts              # CLI entry point
-│   ├── parse/
-│   │   ├── parser.ts         # YAML parse + expression parse -> Config + Expr nodes
-│   │   ├── schema.ts         # Zod schema definitions & validation
-│   │   ├── expression.ts     # ${...} expression parser
-│   │   └── dag.ts            # Dependency graph construction & topological sort
-│   ├── execute/
-│   │   ├── planner.ts        # ${file(...)} resolution + hash computation + diff -> Plan
-│   │   └── hash.ts           # Hash computation (config values + file contents)
-│   ├── apply/
-│   │   └── applier.ts        # Plan execution (${resource...} resolution + API calls + State update)
-│   ├── api/
-│   │   ├── interface.ts      # ApiClient interface definition
-│   │   └── sdk-client.ts     # ApiClient implementation using Anthropic SDK
-│   ├── state/
-│   │   └── store.ts          # State file read/write
-│   └── fs/
-│       └── interface.ts      # FileSystem interface & implementation
-├── tests/
-│   ├── integration/
-│   └── e2e/
-├── package.json
-├── tsconfig.json
+├── packages/
+│   ├── core/                 # @agup/core - Core logic library
+│   │   ├── src/
+│   │   │   ├── parse/        # Parse / Resolve Layer
+│   │   │   ├── execute/      # Execution Layer
+│   │   │   ├── apply/        # Apply Layer
+│   │   │   ├── api/          # ApiClient interface & implementation
+│   │   │   ├── state/        # State management
+│   │   │   ├── fs/           # FileSystem interface & implementation
+│   │   │   ├── types.ts      # Shared type definitions
+│   │   │   └── index.ts      # Public exports
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── cli/                  # @agup/cli - CLI entry point package
+│       ├── src/
+│       │   ├── index.ts      # CLI command dispatch
+│       │   └── index.test.ts # CLI-level tests
+│       ├── package.json
+│       └── tsconfig.json
+├── docs/
+├── bunfig.toml
+├── package.json              # Workspace root
+├── tsconfig.json             # Shared TypeScript settings
 └── README.md
 ```
 
