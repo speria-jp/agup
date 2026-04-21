@@ -59,7 +59,7 @@
 - **対応**: SDK を 0.52.0 → 0.90.0 にアップデートし、beta API の公式型定義を利用するよう書き換え。返り値の型は SDK が保証するようになった。
 - **残課題**: `ApiClient` interface が `Record<string, unknown>` を受け取る設計のため、SDK メソッド呼び出し時に params の `as unknown as XxxParams` キャストが3箇所残る。Apply Layer が動的に params を組み立てる（`deepResolveRefs`）ためコンパイル時に具体型が確定しない。将来的にリソースタイプごとに型付き params builder を導入すれば除去可能。
 
-### 2.2 [LOW] `parseState` にバリデーションがない
+### 2.2 [LOW] ~~`parseState` にバリデーションがない~~ ✅ Fixed
 
 - **場所**: `src/state/store.ts:7-9`
 - **問題**: `JSON.parse` の結果をそのまま `StateFile` に型キャストしている。手動編集やバージョン不整合があった場合に無言で壊れたデータを読み込む。

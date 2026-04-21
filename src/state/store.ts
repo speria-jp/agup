@@ -1,11 +1,47 @@
+import { z } from "zod";
 import type { StateFile, ResourceEntry } from "../types.ts";
+
+const BaseEntrySchema = z.object({
+  logical_name: z.string(),
+  id: z.string(),
+  depends_on: z.array(z.string()),
+  created_at: z.string(),
+  last_applied_hash: z.string(),
+});
+
+const EnvironmentEntrySchema = BaseEntrySchema.extend({
+  type: z.literal("environment"),
+});
+
+const SkillEntrySchema = BaseEntrySchema.extend({
+  type: z.literal("skill"),
+  latest_version: z.string(),
+  display_title: z.string().optional(),
+});
+
+const AgentEntrySchema = BaseEntrySchema.extend({
+  type: z.literal("agent"),
+  version: z.number(),
+});
+
+const ResourceEntrySchema = z.discriminatedUnion("type", [
+  EnvironmentEntrySchema,
+  SkillEntrySchema,
+  AgentEntrySchema,
+]);
+
+const StateFileSchema = z.object({
+  version: z.literal(1),
+  resources: z.record(z.string(), ResourceEntrySchema),
+});
 
 export function createEmptyState(): StateFile {
   return { version: 1, resources: {} };
 }
 
 export function parseState(json: string): StateFile {
-  return JSON.parse(json) as StateFile;
+  const raw = JSON.parse(json);
+  return StateFileSchema.parse(raw);
 }
 
 export function serializeState(state: StateFile): string {

@@ -1,6 +1,75 @@
 import { describe, expect, test } from "bun:test";
-import { destroyOrder } from "./store.ts";
+import { destroyOrder, parseState } from "./store.ts";
 import type { StateFile } from "../types.ts";
+
+describe("parseState", () => {
+  test("parses valid state file", () => {
+    const json = JSON.stringify({
+      version: 1,
+      resources: {
+        "environment.dev": {
+          type: "environment",
+          logical_name: "dev",
+          id: "env_1",
+          depends_on: [],
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:abc",
+        },
+      },
+    });
+    const state = parseState(json);
+    expect(state.version).toBe(1);
+    expect(state.resources["environment.dev"]?.id).toBe("env_1");
+  });
+
+  test("rejects invalid version", () => {
+    const json = JSON.stringify({ version: 2, resources: {} });
+    expect(() => parseState(json)).toThrow();
+  });
+
+  test("rejects missing version field", () => {
+    const json = JSON.stringify({ resources: {} });
+    expect(() => parseState(json)).toThrow();
+  });
+
+  test("rejects invalid resource type", () => {
+    const json = JSON.stringify({
+      version: 1,
+      resources: {
+        "unknown.x": {
+          type: "unknown",
+          logical_name: "x",
+          id: "id_1",
+          depends_on: [],
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:abc",
+        },
+      },
+    });
+    expect(() => parseState(json)).toThrow();
+  });
+
+  test("rejects agent entry missing version field", () => {
+    const json = JSON.stringify({
+      version: 1,
+      resources: {
+        "agent.bot": {
+          type: "agent",
+          logical_name: "bot",
+          id: "agent_1",
+          depends_on: [],
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: "sha256:abc",
+        },
+      },
+    });
+    expect(() => parseState(json)).toThrow();
+  });
+
+  test("rejects invalid JSON", () => {
+    expect(() => parseState("not json")).toThrow();
+  });
+});
 
 describe("destroyOrder", () => {
   test("returns dependent resources before their dependencies", () => {
