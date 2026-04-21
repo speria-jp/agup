@@ -1,6 +1,6 @@
 {
   "name": "@agup/core",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Core logic for agup - declarative Claude Managed Agent resource management",
   "license": "MIT",
   "publishConfig": {
