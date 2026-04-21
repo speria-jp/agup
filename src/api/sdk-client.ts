@@ -1,10 +1,10 @@
 import Anthropic, { toFile } from "@anthropic-ai/sdk";
 import type { AgentCreateParams, AgentUpdateParams } from "@anthropic-ai/sdk/resources/beta/agents/agents.js";
-import type { SkillCreateParams } from "@anthropic-ai/sdk/resources/beta/skills/skills.js";
-import type { VersionCreateParams } from "@anthropic-ai/sdk/resources/beta/skills/versions.js";
-import type { EnvironmentCreateParams, EnvironmentUpdateParams } from "@anthropic-ai/sdk/resources/beta/environments.js";
+import type { SkillCreateParams as SdkSkillCreateParams } from "@anthropic-ai/sdk/resources/beta/skills/skills.js";
+import type { VersionCreateParams as SdkVersionCreateParams } from "@anthropic-ai/sdk/resources/beta/skills/versions.js";
+import type { EnvironmentCreateParams as SdkEnvCreateParams, EnvironmentUpdateParams as SdkEnvUpdateParams } from "@anthropic-ai/sdk/resources/beta/environments.js";
 import type { ApiClient, ApiAgent, ApiSkill, ApiSkillVersion, ApiEnvironment } from "./interface.ts";
-import type { FileEntry } from "../fs/interface.ts";
+import type { EnvironmentParams, SkillCreateParams, SkillUpdateParams, AgentParams } from "../types.ts";
 
 const MAX_RETRIES = 3;
 const RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
@@ -17,14 +17,14 @@ export class SdkApiClient implements ApiClient {
   }
 
   agents = {
-    create: async (params: Record<string, unknown>): Promise<ApiAgent> => {
+    create: async (params: AgentParams): Promise<ApiAgent> => {
       const result = await this.withRetry(() =>
         this.client.beta.agents.create(params as unknown as AgentCreateParams),
       );
       return { id: result.id, version: result.version };
     },
 
-    update: async (id: string, params: Record<string, unknown>): Promise<ApiAgent> => {
+    update: async (id: string, params: AgentParams & { version: number }): Promise<ApiAgent> => {
       const result = await this.withRetry(() =>
         this.client.beta.agents.update(id, params as unknown as AgentUpdateParams),
       );
@@ -37,7 +37,7 @@ export class SdkApiClient implements ApiClient {
   };
 
   skills = {
-    create: async (name: string, params: Record<string, unknown>): Promise<ApiSkill> => {
+    create: async (name: string, params: SkillCreateParams): Promise<ApiSkill> => {
       const sdkParams = await this.toSkillParams(name, params);
       const result = await this.withRetry(() =>
         this.client.beta.skills.create(sdkParams),
@@ -45,12 +45,9 @@ export class SdkApiClient implements ApiClient {
       return { id: result.id };
     },
 
-    // Workaround: SDK's versions.create serializes files incorrectly (uses "files" instead of "files[]"),
-    // causing the API to reject uploads. Use raw fetch with FormData until the SDK is fixed.
-    createVersion: async (name: string, skillId: string, params: Record<string, unknown>): Promise<ApiSkillVersion> => {
-      const fileEntries = (params.files ?? []) as FileEntry[];
+    createVersion: async (name: string, skillId: string, params: SkillUpdateParams): Promise<ApiSkillVersion> => {
       const formData = new FormData();
-      for (const entry of fileEntries) {
+      for (const entry of params.files) {
         formData.append("files[]", new File([entry.content], `${name}/${entry.path}`));
       }
       const result = await this.withRetry(async () => {
@@ -89,16 +86,16 @@ export class SdkApiClient implements ApiClient {
   };
 
   environments = {
-    create: async (params: Record<string, unknown>): Promise<ApiEnvironment> => {
+    create: async (params: EnvironmentParams): Promise<ApiEnvironment> => {
       const result = await this.withRetry(() =>
-        this.client.beta.environments.create(params as unknown as EnvironmentCreateParams),
+        this.client.beta.environments.create(params as unknown as SdkEnvCreateParams),
       );
       return { id: result.id };
     },
 
-    update: async (id: string, params: Record<string, unknown>): Promise<ApiEnvironment> => {
+    update: async (id: string, params: EnvironmentParams): Promise<ApiEnvironment> => {
       const result = await this.withRetry(() =>
-        this.client.beta.environments.update(id, params as EnvironmentUpdateParams),
+        this.client.beta.environments.update(id, params as unknown as SdkEnvUpdateParams),
       );
       return { id: result.id };
     },
@@ -108,13 +105,12 @@ export class SdkApiClient implements ApiClient {
     },
   };
 
-  private async toSkillParams(name: string, params: Record<string, unknown>): Promise<SkillCreateParams & VersionCreateParams> {
-    const fileEntries = (params.files ?? []) as FileEntry[];
+  private async toSkillParams(name: string, params: SkillCreateParams): Promise<SdkSkillCreateParams & SdkVersionCreateParams> {
     const files = await Promise.all(
-      fileEntries.map((entry) => toFile(Buffer.from(entry.content), `${name}/${entry.path}`)),
+      params.files.map((entry) => toFile(Buffer.from(entry.content), `${name}/${entry.path}`)),
     );
     return {
-      ...(params.display_title != null ? { display_title: params.display_title as string } : {}),
+      ...(params.display_title != null ? { display_title: params.display_title } : {}),
       files,
     };
   }

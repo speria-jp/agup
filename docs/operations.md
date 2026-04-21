@@ -6,10 +6,16 @@
 type ResourceType = "environment" | "skill" | "agent";
 
 type Operation =
-  | { type: "create"; resource: ResourceType; name: string; params: Record<string, unknown> }
-  | { type: "update"; resource: ResourceType; name: string; id: string; params: Record<string, unknown> }
+  | { type: "create"; resource: "environment"; name: string; params: EnvironmentParams }
+  | { type: "update"; resource: "environment"; name: string; id: string; params: EnvironmentParams }
+  | { type: "create"; resource: "skill"; name: string; params: SkillCreateParams }
+  | { type: "update"; resource: "skill"; name: string; id: string; params: SkillUpdateParams }
+  | { type: "create"; resource: "agent"; name: string; params: AgentParams }
+  | { type: "update"; resource: "agent"; name: string; id: string; params: AgentParams }
   | { type: "destroy"; resource: ResourceType; name: string; id: string };
 ```
+
+params 型の定義は `src/types.ts` を参照。
 
 ## Operation と API のマッピング
 

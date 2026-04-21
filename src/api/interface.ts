@@ -1,3 +1,5 @@
+import type { EnvironmentParams, SkillCreateParams, SkillUpdateParams, AgentParams } from "../types.ts";
+
 export interface ApiAgent {
   id: string;
   version: number;
@@ -18,18 +20,18 @@ export interface ApiEnvironment {
 
 export interface ApiClient {
   agents: {
-    create(params: Record<string, unknown>): Promise<ApiAgent>;
-    update(id: string, params: Record<string, unknown>): Promise<ApiAgent>;
+    create(params: AgentParams): Promise<ApiAgent>;
+    update(id: string, params: AgentParams & { version: number }): Promise<ApiAgent>;
     archive(id: string): Promise<void>;
   };
   skills: {
-    create(name: string, params: Record<string, unknown>): Promise<ApiSkill>;
-    createVersion(name: string, skillId: string, params: Record<string, unknown>): Promise<ApiSkillVersion>;
+    create(name: string, params: SkillCreateParams): Promise<ApiSkill>;
+    createVersion(name: string, skillId: string, params: SkillUpdateParams): Promise<ApiSkillVersion>;
     delete(skillId: string): Promise<void>;
   };
   environments: {
-    create(params: Record<string, unknown>): Promise<ApiEnvironment>;
-    update(id: string, params: Record<string, unknown>): Promise<ApiEnvironment>;
+    create(params: EnvironmentParams): Promise<ApiEnvironment>;
+    update(id: string, params: EnvironmentParams): Promise<ApiEnvironment>;
     archive(id: string): Promise<void>;
   };
 }

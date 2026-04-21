@@ -1,6 +1,5 @@
 import type { FileSystem } from "../fs/interface.ts";
-import type { StateFile } from "../types.ts";
-import type { Operation, Plan } from "../types.ts";
+import type { StateFile, Operation, Plan, EnvironmentParams, SkillCreateParams, SkillUpdateParams, AgentParams } from "../types.ts";
 import type { ParsedConfig } from "../parse/parser.ts";
 import type { StringWithExprs } from "../parse/expression.ts";
 import { computeHash, computeSkillHash } from "./hash.ts";
@@ -26,24 +25,14 @@ export async function generatePlan(
   if (config.raw.environments) {
     for (const [name, envConfig] of Object.entries(config.raw.environments)) {
       const key = `environment.${name}`;
-      const hash = computeHash(envConfig as unknown as Record<string, unknown>);
+      const params = envConfig as unknown as EnvironmentParams;
+      const hash = computeHash(params as unknown as Record<string, unknown>);
       const existing = getEntry(state, key);
 
       if (!existing) {
-        operations.push({
-          type: "create",
-          resource: "environment",
-          name,
-          params: envConfig as unknown as Record<string, unknown>,
-        });
+        operations.push({ type: "create", resource: "environment", name, params });
       } else if (existing.last_applied_hash !== hash) {
-        operations.push({
-          type: "update",
-          resource: "environment",
-          name,
-          id: existing.id,
-          params: envConfig as unknown as Record<string, unknown>,
-        });
+        operations.push({ type: "update", resource: "environment", name, id: existing.id, params });
       }
     }
   }
@@ -63,44 +52,20 @@ export async function generatePlan(
       const existing = getEntry(state, key);
 
       if (!existing) {
-        operations.push({
-          type: "create",
-          resource: "skill",
-          name,
-          params: {
-            display_title: skillConfig.display_title,
-            files,
-          },
-        });
+        const params: SkillCreateParams = { display_title: skillConfig.display_title, files };
+        operations.push({ type: "create", resource: "skill", name, params });
       } else {
         const oldTitle = (existing as { display_title?: string }).display_title;
         const newTitle = skillConfig.display_title;
         const titleChanged = oldTitle !== newTitle;
 
         if (titleChanged) {
-          operations.push({
-            type: "destroy",
-            resource: "skill",
-            name,
-            id: existing.id,
-          });
-          operations.push({
-            type: "create",
-            resource: "skill",
-            name,
-            params: {
-              display_title: skillConfig.display_title,
-              files,
-            },
-          });
+          operations.push({ type: "destroy", resource: "skill", name, id: existing.id });
+          const params: SkillCreateParams = { display_title: skillConfig.display_title, files };
+          operations.push({ type: "create", resource: "skill", name, params });
         } else if (existing.last_applied_hash !== hash) {
-          operations.push({
-            type: "update",
-            resource: "skill",
-            name,
-            id: existing.id,
-            params: { files },
-          });
+          const params: SkillUpdateParams = { files };
+          operations.push({ type: "update", resource: "skill", name, id: existing.id, params });
         }
       }
     }
@@ -113,22 +78,14 @@ export async function generatePlan(
       const injected = injectResourceRefs(resolved as Record<string, unknown>, config, state);
       const hash = computeHash(injected as Record<string, unknown>);
       const existing = getEntry(state, key);
+      // Cast: injected may contain ResourceRef/TemplateRef markers that
+      // the Apply Layer resolves before calling the API.
+      const params = injected as unknown as AgentParams;
 
       if (!existing) {
-        operations.push({
-          type: "create",
-          resource: "agent",
-          name,
-          params: injected,
-        });
+        operations.push({ type: "create", resource: "agent", name, params });
       } else if (existing.last_applied_hash !== hash) {
-        operations.push({
-          type: "update",
-          resource: "agent",
-          name,
-          id: existing.id,
-          params: injected,
-        });
+        operations.push({ type: "update", resource: "agent", name, id: existing.id, params });
       }
     }
   }

@@ -266,7 +266,7 @@ agents:
       fs: mockFs(),
     });
 
-    const op = plan.operations[0] as { params: Record<string, unknown> };
+    const op = plan.operations[0] as unknown as { params: Record<string, unknown> };
     const skills = op.params.skills as { skill_id: unknown }[];
     expect(skills[0]!.skill_id).toEqual({
       __expr: "resource_ref",
@@ -289,7 +289,7 @@ agents:
       fs: mockFs(),
     });
 
-    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    const { params } = plan.operations[0] as unknown as { params: Record<string, unknown> };
     expect(params.system).toEqual({
       __expr: "template",
       parts: [
@@ -313,7 +313,7 @@ agents:
       fs: mockFs(),
     });
 
-    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    const { params } = plan.operations[0] as unknown as { params: Record<string, unknown> };
     const tmpl = params.system as { __expr: string; parts: unknown[] };
     expect(tmpl.__expr).toBe("template");
     expect(tmpl.parts).toEqual([
@@ -337,7 +337,7 @@ agents:
       fs,
     });
 
-    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    const { params } = plan.operations[0] as unknown as { params: Record<string, unknown> };
     expect(params.system).toEqual({
       __expr: "template",
       parts: [
@@ -365,7 +365,7 @@ agents:
       fs,
     });
 
-    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    const { params } = plan.operations[0] as unknown as { params: Record<string, unknown> };
     expect(params.system).toBe("AAA and BBB");
   });
 
@@ -401,7 +401,7 @@ agents:
     });
 
     const createOp = plan.operations.find((op) => op.resource === "agent")!;
-    const params = (createOp as { params: Record<string, unknown> }).params;
+    const params = (createOp as unknown as { params: Record<string, unknown> }).params;
     const skills = params.skills as { skill_id: unknown }[];
     expect(skills[0]!.skill_id).toBe("skill_real_id_123");
   });
@@ -435,7 +435,7 @@ agents:
     });
 
     const createOp = plan.operations.find((op) => op.resource === "agent")!;
-    const params = (createOp as { params: Record<string, unknown> }).params;
+    const params = (createOp as unknown as { params: Record<string, unknown> }).params;
     expect(params.system).toBe("Uses skill_abc for lookup");
   });
 
@@ -455,7 +455,7 @@ agents:
       fs: mockFs(),
     });
 
-    const { params } = plan.operations[0] as { params: Record<string, unknown> };
+    const { params } = plan.operations[0] as unknown as { params: Record<string, unknown> };
     const skills = params.skills as { skill_id: unknown }[];
     expect(skills[0]!.skill_id).toEqual({
       __expr: "resource_ref",

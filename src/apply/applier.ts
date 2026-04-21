@@ -1,5 +1,8 @@
 import type { ApiClient } from "../api/interface.ts";
-import type { Operation, Plan, StateFile, ResourceEntry, SkillEntry, AgentEntry } from "../types.ts";
+import type {
+  Operation, Plan, StateFile, ResourceEntry, SkillEntry, AgentEntry,
+  EnvironmentParams, SkillCreateParams, SkillUpdateParams, AgentParams,
+} from "../types.ts";
 import { setEntry, removeEntry } from "../state/store.ts";
 import { computeHash } from "../execute/hash.ts";
 
@@ -125,7 +128,8 @@ async function createResource(
 
   switch (resource) {
     case "environment": {
-      const result = await apiClient.environments.create(params);
+      const typed = params as unknown as EnvironmentParams;
+      const result = await apiClient.environments.create(typed);
       return {
         type: "environment",
         logical_name: name,
@@ -136,21 +140,22 @@ async function createResource(
       };
     }
     case "skill": {
-      const result = await apiClient.skills.create(name, params);
-      const displayTitle = (params.display_title as string | undefined) ?? undefined;
+      const typed = params as unknown as SkillCreateParams;
+      const result = await apiClient.skills.create(name, typed);
       return {
         type: "skill",
         logical_name: name,
         id: result.id,
         depends_on: dependsOn,
         latest_version: "",
-        display_title: displayTitle,
+        display_title: typed.display_title,
         created_at: now,
         last_applied_hash: hash,
       };
     }
     case "agent": {
-      const result = await apiClient.agents.create(params);
+      const typed = params as unknown as AgentParams;
+      const result = await apiClient.agents.create(typed);
       return {
         type: "agent",
         logical_name: name,
@@ -181,11 +186,13 @@ async function updateResource(
 
   switch (resource) {
     case "environment": {
-      await apiClient.environments.update(id, params);
+      const typed = params as unknown as EnvironmentParams;
+      await apiClient.environments.update(id, typed);
       return { ...existing!, depends_on: dependsOn, last_applied_hash: hash } as ResourceEntry;
     }
     case "skill": {
-      const result = await apiClient.skills.createVersion(name, id, params);
+      const typed = params as unknown as SkillUpdateParams;
+      const result = await apiClient.skills.createVersion(name, id, typed);
       const skillEntry = existing as SkillEntry;
       return {
         ...skillEntry,
@@ -194,9 +201,10 @@ async function updateResource(
       };
     }
     case "agent": {
+      const typed = params as unknown as AgentParams;
       const agentEntry = existing as AgentEntry;
       const result = await apiClient.agents.update(id, {
-        ...params,
+        ...typed,
         version: agentEntry.version,
       });
       return {

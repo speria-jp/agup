@@ -1,8 +1,61 @@
+import type { FileEntry } from "./fs/interface.ts";
+
 export type ResourceType = "environment" | "skill" | "agent";
 
+// --- Operation params types ---
+
+export interface EnvironmentParams {
+  name: string;
+  description?: string;
+  config: {
+    type: "cloud";
+    networking?:
+      | { type: "unrestricted" }
+      | {
+          type: "limited";
+          allowed_hosts?: string[];
+          allow_mcp_servers?: boolean;
+          allow_package_managers?: boolean;
+        };
+    packages?: {
+      pip?: string[];
+      npm?: string[];
+      apt?: string[];
+      cargo?: string[];
+      gem?: string[];
+      go?: string[];
+    };
+  };
+  metadata?: Record<string, string>;
+}
+
+export interface SkillCreateParams {
+  display_title?: string;
+  files: FileEntry[];
+}
+
+export interface SkillUpdateParams {
+  files: FileEntry[];
+}
+
+export interface AgentParams {
+  name: string;
+  description?: string;
+  model: string | { id: string; speed?: "standard" | "fast" };
+  system: string;
+  mcp_servers?: { name: string; url: string }[];
+  skills?: { type: "anthropic" | "custom"; skill_id: string; version?: string }[];
+  tools?: unknown[];
+  metadata?: Record<string, string>;
+}
+
 export type Operation =
-  | { type: "create"; resource: ResourceType; name: string; params: Record<string, unknown> }
-  | { type: "update"; resource: ResourceType; name: string; id: string; params: Record<string, unknown> }
+  | { type: "create"; resource: "environment"; name: string; params: EnvironmentParams }
+  | { type: "update"; resource: "environment"; name: string; id: string; params: EnvironmentParams }
+  | { type: "create"; resource: "skill"; name: string; params: SkillCreateParams }
+  | { type: "update"; resource: "skill"; name: string; id: string; params: SkillUpdateParams }
+  | { type: "create"; resource: "agent"; name: string; params: AgentParams }
+  | { type: "update"; resource: "agent"; name: string; id: string; params: AgentParams }
   | { type: "destroy"; resource: ResourceType; name: string; id: string };
 
 export interface Plan {

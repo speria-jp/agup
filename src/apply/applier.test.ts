@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { applyPlan } from "./applier.ts";
 import { createEmptyState } from "../state/store.ts";
 import type { ApiClient } from "../api/interface.ts";
-import type { Plan, StateFile } from "../types.ts";
+import type { Operation, Plan, StateFile } from "../types.ts";
 
 function mockApiClient(overrides?: Partial<{
   agentCreate: () => Promise<{ id: string; version: number }>;
@@ -193,7 +193,7 @@ describe("applyPlan", () => {
       },
     };
 
-    const calls: { id: string; params: Record<string, unknown> }[] = [];
+    const calls: unknown[] = [];
     const client = mockApiClient();
     client.environments.update = async (id, params) => {
       calls.push({ id, params });
@@ -216,8 +216,9 @@ describe("applyPlan", () => {
     const result = await applyPlan(plan, state, client);
     expect(result.applied).toBe(1);
     expect(result.error).toBeNull();
-    expect(calls[0]!.id).toBe("env_123");
-    expect(calls[0]!.params.name).toBe("Dev Updated");
+    const call = calls[0] as { id: string; params: Record<string, unknown> };
+    expect(call.id).toBe("env_123");
+    expect(call.params.name).toBe("Dev Updated");
     const entry = result.state.resources["environment.dev"]!;
     expect(entry.id).toBe("env_123");
     expect(entry.last_applied_hash).not.toBe("sha256:old");
@@ -239,7 +240,7 @@ describe("applyPlan", () => {
       },
     };
 
-    const calls: Record<string, unknown>[] = [];
+    const calls: unknown[] = [];
     const client = mockApiClient();
     client.agents.update = async (_id, params) => {
       calls.push(params);
@@ -262,7 +263,7 @@ describe("applyPlan", () => {
     const result = await applyPlan(plan, state, client);
     expect(result.applied).toBe(1);
     expect(result.error).toBeNull();
-    expect(calls[0]!.version).toBe(3);
+    expect((calls[0] as Record<string, unknown>).version).toBe(3);
     const entry = result.state.resources["agent.bot"] as { version: number; last_applied_hash: string };
     expect(entry.version).toBe(4);
     expect(entry.last_applied_hash).not.toBe("sha256:old");
@@ -331,6 +332,8 @@ describe("applyPlan", () => {
     expect(entry.created_at).toBe("2026-04-20T10:00:00Z");
   });
 
+  // Operations below contain unresolved ResourceRef/TemplateRef markers.
+  // These are resolved by the applier at runtime, so we cast to Operation.
   test("R-2: resource ref resolved from create result", async () => {
     const plan: Plan = {
       dependencies: {},
@@ -354,16 +357,16 @@ describe("applyPlan", () => {
               skill_id: { __expr: "resource_ref", resource: "skill", name: "search", attr: "id" },
             }],
           },
-        },
+        } as unknown as Operation,
       ],
     };
 
-    const calls: Record<string, unknown>[] = [];
+    const calls: unknown[] = [];
     const client: ApiClient = {
       ...mockApiClient(),
       agents: {
         ...mockApiClient().agents,
-        create: async (params: Record<string, unknown>) => {
+        create: async (params) => {
           calls.push(params);
           return { id: "agent_new", version: 1 };
         },
@@ -394,7 +397,7 @@ describe("applyPlan", () => {
               skill_id: { __expr: "resource_ref", resource: "skill", name: "missing", attr: "id" },
             }],
           },
-        },
+        } as unknown as Operation,
       ],
     };
 
@@ -439,16 +442,16 @@ describe("applyPlan", () => {
               ],
             },
           },
-        },
+        } as unknown as Operation,
       ],
     };
 
-    const calls: Record<string, unknown>[] = [];
+    const calls: unknown[] = [];
     const client: ApiClient = {
       ...mockApiClient(),
       agents: {
         ...mockApiClient().agents,
-        create: async (params: Record<string, unknown>) => {
+        create: async (params) => {
           calls.push(params);
           return { id: "agent_new", version: 1 };
         },
@@ -504,16 +507,16 @@ describe("applyPlan", () => {
               ],
             },
           },
-        },
+        } as unknown as Operation,
       ],
     };
 
-    const calls: Record<string, unknown>[] = [];
+    const calls: unknown[] = [];
     const client: ApiClient = {
       ...mockApiClient(),
       agents: {
         ...mockApiClient().agents,
-        create: async (params: Record<string, unknown>) => {
+        create: async (params) => {
           calls.push(params);
           return { id: "agent_new", version: 1 };
         },
@@ -544,7 +547,7 @@ describe("applyPlan", () => {
               ],
             },
           },
-        },
+        } as unknown as Operation,
       ],
     };
 
@@ -590,16 +593,16 @@ describe("applyPlan", () => {
               },
             },
           },
-        },
+        } as unknown as Operation,
       ],
     };
 
-    const calls: Record<string, unknown>[] = [];
+    const calls: unknown[] = [];
     const client: ApiClient = {
       ...mockApiClient(),
       agents: {
         ...mockApiClient().agents,
-        create: async (params: Record<string, unknown>) => {
+        create: async (params) => {
           calls.push(params);
           return { id: "agent_new", version: 1 };
         },
