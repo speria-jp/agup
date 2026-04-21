@@ -1,5 +1,6 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   parseYaml,
   generatePlan,
@@ -23,6 +24,11 @@ function hasFlag(flag: string): boolean {
 async function main() {
   const command = process.argv[2];
   const autoApprove = hasFlag("--yes");
+
+  if (command === "version" || hasFlag("--version") || hasFlag("-v")) {
+    await printVersion();
+    return;
+  }
 
   switch (command) {
     case "plan":
@@ -209,6 +215,13 @@ async function createApiClient(): Promise<ApiClient> {
   return new SdkApiClient();
 }
 
+async function printVersion() {
+  const selfDir = path.dirname(fileURLToPath(import.meta.url));
+  const pkgPath = path.resolve(selfDir, "..", "package.json");
+  const pkg = JSON.parse(await fs.readFile(pkgPath, "utf-8"));
+  console.log(`agup ${pkg.version}`);
+}
+
 function printUsage() {
   console.log(`
 Usage: agup <command>
@@ -218,6 +231,11 @@ Commands:
   apply     Apply changes
   destroy   Destroy all managed resources
   state     Show current state
+  version   Show version
+
+Options:
+  -v, --version   Show version
+  -y, --yes       Skip confirmation prompts
 `);
 }
 

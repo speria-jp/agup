@@ -8,6 +8,7 @@
 | `agup apply` | Execute the plan, call APIs, and update state |
 | `agup destroy` | Delete all resources in state |
 | `agup state` | Display the current state file |
+| `agup version` | Display the CLI version |
 
 ## `agup plan`
 
@@ -81,13 +82,35 @@ Displays the current state file contents.
 |------------|-------------|
 | `agup state refresh` | Fetch latest state from API and rebuild state file |
 
-## Global Options (Phase 2)
+## `agup version`
+
+Displays the CLI version.
+
+```
+agup version
+agup 0.1.0
+```
+
+Also available as `--version` or `-v` flag with any command.
+
+```
+agup --version
+agup 0.1.0
+```
+
+## Global Options
+
+| Option | Description |
+|--------|-------------|
+| `-v, --version` | Display the CLI version |
+| `-y, --yes` | Skip confirmation prompts (for CI/CD) |
+
+### Global Options (Phase 2)
 
 | Option | Description |
 |--------|-------------|
 | `--config <path>` | Config file path (default: `./agup.yaml`) |
 | `--state <path>` | State file path (default: `./agup.state.json`) |
-| `-y, --yes` | Skip confirmation prompts (for CI/CD) |
 
 ## Exit Codes
 
