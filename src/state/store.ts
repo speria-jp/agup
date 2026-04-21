@@ -27,3 +27,28 @@ export function removeEntry(state: StateFile, key: string): StateFile {
   const { [key]: _, ...rest } = state.resources;
   return { ...state, resources: rest };
 }
+
+export function destroyOrder(state: StateFile): string[] {
+  const keys = Object.keys(state.resources);
+  const visited = new Set<string>();
+  const result: string[] = [];
+
+  function visit(key: string): void {
+    if (visited.has(key)) return;
+    visited.add(key);
+
+    const entry = state.resources[key];
+    if (entry?.depends_on) {
+      for (const dep of entry.depends_on) {
+        visit(dep);
+      }
+    }
+    result.push(key);
+  }
+
+  for (const key of keys) {
+    visit(key);
+  }
+
+  return result.reverse();
+}

@@ -33,6 +33,7 @@ function mockApiClient(overrides?: Partial<{
 describe("applyPlan", () => {
   test("A-1: environment create", async () => {
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -52,6 +53,7 @@ describe("applyPlan", () => {
 
   test("A-6: agent create", async () => {
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -69,6 +71,7 @@ describe("applyPlan", () => {
 
   test("A-3: skill create", async () => {
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -92,6 +95,7 @@ describe("applyPlan", () => {
           type: "skill",
           logical_name: "search",
           id: "skill_123",
+          depends_on: [],
           latest_version: "v1",
           created_at: "2026-04-20T10:00:00Z",
           last_applied_hash: "sha256:old",
@@ -100,6 +104,7 @@ describe("applyPlan", () => {
     };
 
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create_version",
@@ -125,6 +130,7 @@ describe("applyPlan", () => {
           type: "skill",
           logical_name: "search",
           id: "skill_123",
+          depends_on: [],
           latest_version: "v1",
           created_at: "2026-04-20T10:00:00Z",
           last_applied_hash: "sha256:old",
@@ -133,6 +139,7 @@ describe("applyPlan", () => {
     };
 
     const plan: Plan = {
+      dependencies: {},
       operations: [
         { type: "destroy", resource: "skill", name: "search", id: "skill_123" },
       ],
@@ -151,6 +158,7 @@ describe("applyPlan", () => {
           type: "agent",
           logical_name: "bot",
           id: "agent_123",
+          depends_on: [],
           version: 1,
           created_at: "2026-04-20T10:00:00Z",
           last_applied_hash: "sha256:old",
@@ -159,6 +167,7 @@ describe("applyPlan", () => {
     };
 
     const plan: Plan = {
+      dependencies: {},
       operations: [
         { type: "destroy", resource: "agent", name: "bot", id: "agent_123" },
       ],
@@ -171,6 +180,7 @@ describe("applyPlan", () => {
 
   test("R-2: resource ref resolved from create result", async () => {
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -216,6 +226,7 @@ describe("applyPlan", () => {
 
   test("R-3: unresolved reference throws error", async () => {
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -248,6 +259,7 @@ describe("applyPlan", () => {
           type: "skill",
           logical_name: "search",
           id: "skill_abc",
+          depends_on: [],
           latest_version: "v1",
           created_at: "2026-04-20T10:00:00Z",
           last_applied_hash: "sha256:old",
@@ -256,6 +268,7 @@ describe("applyPlan", () => {
     };
 
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -302,6 +315,7 @@ describe("applyPlan", () => {
           type: "skill",
           logical_name: "a",
           id: "skill_aaa",
+          depends_on: [],
           latest_version: "v1",
           created_at: "2026-04-20T10:00:00Z",
           last_applied_hash: "sha256:old",
@@ -310,6 +324,7 @@ describe("applyPlan", () => {
           type: "skill",
           logical_name: "b",
           id: "skill_bbb",
+          depends_on: [],
           latest_version: "v1",
           created_at: "2026-04-20T10:00:00Z",
           last_applied_hash: "sha256:old",
@@ -318,6 +333,7 @@ describe("applyPlan", () => {
     };
 
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -358,6 +374,7 @@ describe("applyPlan", () => {
 
   test("R-6: template with unresolved ref throws error", async () => {
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -392,6 +409,7 @@ describe("applyPlan", () => {
           type: "environment",
           logical_name: "dev",
           id: "env_123",
+          depends_on: [],
           created_at: "2026-04-20T10:00:00Z",
           last_applied_hash: "sha256:old",
         },
@@ -399,6 +417,7 @@ describe("applyPlan", () => {
     };
 
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -442,6 +461,7 @@ describe("applyPlan", () => {
 
   test("S-5: partial apply - first op saved on second failure", async () => {
     const plan: Plan = {
+      dependencies: {},
       operations: [
         {
           type: "create",
@@ -475,5 +495,37 @@ describe("applyPlan", () => {
     expect(result.state.resources["environment.dev"]).toBeDefined();
     expect(result.state.resources["skill.search"]).toBeUndefined();
     expect(result.failed!.name).toBe("search");
+  });
+
+  test("S-6: depends_on stored in state entry", async () => {
+    const plan: Plan = {
+      dependencies: {
+        "skill.search": [],
+        "agent.bot": ["skill.search"],
+      },
+      operations: [
+        {
+          type: "create",
+          resource: "skill",
+          name: "search",
+          params: { files: [{ path: "SKILL.md", content: "# Skill" }] },
+        },
+        {
+          type: "create",
+          resource: "agent",
+          name: "bot",
+          params: {
+            name: "Bot",
+            model: "claude-sonnet-4-6-20250514",
+            system: "Hi",
+          },
+        },
+      ],
+    };
+
+    const result = await applyPlan(plan, createEmptyState(), mockApiClient());
+    expect(result.applied).toBe(2);
+    expect(result.state.resources["skill.search"]!.depends_on).toEqual([]);
+    expect(result.state.resources["agent.bot"]!.depends_on).toEqual(["skill.search"]);
   });
 });

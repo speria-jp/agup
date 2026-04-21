@@ -20,7 +20,7 @@ export async function applyPlan(
 
   for (const operation of plan.operations) {
     try {
-      currentState = await applyOperation(operation, currentState, apiClient);
+      currentState = await applyOperation(operation, currentState, plan.dependencies, apiClient);
       applied++;
     } catch (err) {
       return {
@@ -38,18 +38,20 @@ export async function applyPlan(
 async function applyOperation(
   operation: Operation,
   state: StateFile,
+  dependencies: Record<string, string[]>,
   apiClient: ApiClient,
 ): Promise<StateFile> {
   const key = `${operation.resource}.${operation.name}`;
   const params = resolveParams(operation, state);
+  const dependsOn = dependencies[key] ?? [];
 
   switch (operation.type) {
     case "create": {
-      const entry = await createResource(operation.resource, operation.name, params, apiClient);
+      const entry = await createResource(operation.resource, operation.name, params, dependsOn, apiClient);
       return setEntry(state, key, entry);
     }
     case "update": {
-      const entry = await updateResource(operation.resource, operation.id, params, state, apiClient);
+      const entry = await updateResource(operation.resource, operation.id, params, dependsOn, state, apiClient);
       return setEntry(state, key, entry);
     }
     case "create_version": {
@@ -125,6 +127,7 @@ async function createResource(
   resource: string,
   name: string,
   params: Record<string, unknown>,
+  dependsOn: string[],
   apiClient: ApiClient,
 ): Promise<ResourceEntry> {
   const now = new Date().toISOString();
@@ -137,6 +140,7 @@ async function createResource(
         type: "environment",
         logical_name: name,
         id: result.id,
+        depends_on: dependsOn,
         created_at: now,
         last_applied_hash: hash,
       };
@@ -148,6 +152,7 @@ async function createResource(
         type: "skill",
         logical_name: name,
         id: result.id,
+        depends_on: dependsOn,
         latest_version: "",
         display_title: displayTitle,
         created_at: now,
@@ -160,6 +165,7 @@ async function createResource(
         type: "agent",
         logical_name: name,
         id: result.id,
+        depends_on: dependsOn,
         version: result.version,
         created_at: now,
         last_applied_hash: hash,
@@ -174,6 +180,7 @@ async function updateResource(
   resource: string,
   id: string,
   params: Record<string, unknown>,
+  dependsOn: string[],
   state: StateFile,
   apiClient: ApiClient,
 ): Promise<ResourceEntry> {
@@ -184,7 +191,7 @@ async function updateResource(
   switch (resource) {
     case "environment": {
       await apiClient.environments.update(id, params);
-      return { ...existing!, last_applied_hash: hash } as ResourceEntry;
+      return { ...existing!, depends_on: dependsOn, last_applied_hash: hash } as ResourceEntry;
     }
     case "agent": {
       const agentEntry = existing as AgentEntry;
@@ -194,6 +201,7 @@ async function updateResource(
       });
       return {
         ...agentEntry,
+        depends_on: dependsOn,
         version: result.version,
         last_applied_hash: hash,
       };

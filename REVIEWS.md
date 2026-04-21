@@ -42,7 +42,7 @@
 - **仕様**: config_spec.md に「Can be embedded within strings」と明記
 - **修正案**: 混在テンプレートの resource_ref 部分を Apply 時に解決できる仕組みが必要
 
-### 1.5 [LOW] `destroy` コマンドの DAG 未使用
+### 1.5 [LOW] ~~`destroy` コマンドの DAG 未使用~~ ✅ Fixed
 
 - **場所**: `src/index.ts:116-128`
 - **問題**: `runDestroy` は型名のハードコードされた順序 (`["agent", "skill", "environment"]`) で destroy を生成している。仕様では DAG の逆順を使うとされているが、現時点のリソース構成では正しい。ただし将来 Environment → Skill の依存が導入された場合に破綻する。

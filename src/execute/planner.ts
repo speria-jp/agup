@@ -144,7 +144,13 @@ export async function generatePlan(
   }
 
   const sortedOps = sortOperations(operations, dag.sorted);
-  return { operations: sortedOps };
+
+  const dependencies: Record<string, string[]> = {};
+  for (const [key, node] of dag.nodes) {
+    dependencies[key] = node.dependencies;
+  }
+
+  return { operations: sortedOps, dependencies };
 }
 
 async function resolveFileRefs(

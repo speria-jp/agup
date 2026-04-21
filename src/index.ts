@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { parseYaml } from "./parse/parser.ts";
 import { generatePlan } from "./execute/planner.ts";
 import { applyPlan } from "./apply/applier.ts";
-import { createEmptyState, parseState, serializeState } from "./state/store.ts";
+import { createEmptyState, parseState, serializeState, destroyOrder } from "./state/store.ts";
 import { LocalFileSystem } from "./fs/local.ts";
 import type { ApiClient } from "./api/interface.ts";
 import type { Operation, Plan, StateFile } from "./types.ts";
@@ -112,23 +112,18 @@ async function runDestroy() {
     return;
   }
 
-  const operations: Operation[] = [];
-  const destroyOrder: string[] = ["agent", "skill", "environment"];
+  const sortedKeys = destroyOrder(state);
+  const operations: Operation[] = sortedKeys.map((key) => {
+    const entry = state.resources[key]!;
+    return {
+      type: "destroy" as const,
+      resource: entry.type,
+      name: entry.logical_name,
+      id: entry.id,
+    };
+  });
 
-  for (const type of destroyOrder) {
-    for (const [, entry] of Object.entries(state.resources)) {
-      if (entry.type === type) {
-        operations.push({
-          type: "destroy",
-          resource: entry.type,
-          name: entry.logical_name,
-          id: entry.id,
-        });
-      }
-    }
-  }
-
-  const plan: Plan = { operations };
+  const plan: Plan = { operations, dependencies: {} };
   printPlan(plan);
   console.log("");
 

@@ -8,6 +8,7 @@ export type Operation =
 
 export interface Plan {
   operations: Operation[];
+  dependencies: Record<string, string[]>;
 }
 
 export interface StateFile {
@@ -24,6 +25,7 @@ interface BaseEntry {
   type: ResourceType;
   logical_name: string;
   id: string;
+  depends_on: string[];
   created_at: string;
   last_applied_hash: string;
 }
