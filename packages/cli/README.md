@@ -1,6 +1,6 @@
 # @agup/cli
 
-CLI for managing Claude Managed Agent resources with declarative YAML configuration.
+CLI for managing Claude Managed Agents resources with declarative YAML configuration.
 
 ## Install
 

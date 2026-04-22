@@ -1,6 +1,6 @@
 # agup - Documentation
 
-Design/Spec documents for a declarative CLI tool that manages Claude Managed Agent resources.
+Design/Spec documents for a declarative CLI tool that manages Claude Managed Agents resources.
 
 ## Index
 

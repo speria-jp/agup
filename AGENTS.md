@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-agup - Declarative management tool for Claude Managed Agent resources (Terraform-like)
+agup - Declarative management tool for Claude Managed Agents resources (Terraform-like)
 
 ## Tech Stack
 
