@@ -49,7 +49,7 @@ bun run lint           # Lint (oxlint)
 
 ## Docs Index
 
-Use these documents as the primary references before making changes:
+Use these documents as the primary references before making changes, and always read [docs/convention.md](./docs/convention.md) first.
 
 | Document | Contents |
 |----------|----------|
