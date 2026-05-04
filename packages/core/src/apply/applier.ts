@@ -4,7 +4,7 @@ import type {
   EnvironmentParams, SkillCreateParams, SkillUpdateParams, AgentParams,
 } from "../types.ts";
 import { setEntry, removeEntry } from "../state/store.ts";
-import { computeHash } from "../execute/hash.ts";
+import { computeHash, computeSkillHash } from "../execute/hash.ts";
 
 export interface ApplyResult {
   state: StateFile;
@@ -124,11 +124,11 @@ async function createResource(
   apiClient: ApiClient,
 ): Promise<ResourceEntry> {
   const now = new Date().toISOString();
-  const hash = computeHash(params);
 
   switch (resource) {
     case "environment": {
       const typed = params as unknown as EnvironmentParams;
+      const hash = computeHash(params);
       const result = await apiClient.environments.create(typed);
       return {
         type: "environment",
@@ -141,6 +141,7 @@ async function createResource(
     }
     case "skill": {
       const typed = params as unknown as SkillCreateParams;
+      const hash = computeSkillHash(typed.display_title, typed.files);
       const result = await apiClient.skills.create(name, typed);
       return {
         type: "skill",
@@ -155,6 +156,7 @@ async function createResource(
     }
     case "agent": {
       const typed = params as unknown as AgentParams;
+      const hash = computeHash(params);
       const result = await apiClient.agents.create(typed);
       return {
         type: "agent",
@@ -182,18 +184,19 @@ async function updateResource(
 ): Promise<ResourceEntry> {
   const key = `${resource}.${name}`;
   const existing = state.resources[key];
-  const hash = computeHash(params);
 
   switch (resource) {
     case "environment": {
       const typed = params as unknown as EnvironmentParams;
+      const hash = computeHash(params);
       await apiClient.environments.update(id, typed);
       return { ...existing!, depends_on: dependsOn, last_applied_hash: hash } as ResourceEntry;
     }
     case "skill": {
       const typed = params as unknown as SkillUpdateParams;
-      const result = await apiClient.skills.createVersion(name, id, typed);
       const skillEntry = existing as SkillEntry;
+      const hash = computeSkillHash(skillEntry.display_title, typed.files);
+      const result = await apiClient.skills.createVersion(name, id, typed);
       return {
         ...skillEntry,
         latest_version: result.version_id,
@@ -202,6 +205,7 @@ async function updateResource(
     }
     case "agent": {
       const typed = params as unknown as AgentParams;
+      const hash = computeHash(params);
       const agentEntry = existing as AgentEntry;
       const result = await apiClient.agents.update(id, {
         ...typed,

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { applyPlan } from "./applier.ts";
 import { createEmptyState } from "../state/store.ts";
+import { computeSkillHash } from "../execute/hash.ts";
 import type { ApiClient } from "../api/interface.ts";
 import type { Operation, Plan, StateFile } from "../types.ts";
 
@@ -651,6 +652,68 @@ describe("applyPlan", () => {
     expect(result.state.resources["environment.dev"]).toBeDefined();
     expect(result.state.resources["skill.search"]).toBeUndefined();
     expect(result.failed!.name).toBe("search");
+  });
+
+  test("S-7: skill create hash matches planner computeSkillHash", async () => {
+    const files = [{ path: "SKILL.md", content: "# Skill" }];
+    const displayTitle = "Search Tool";
+    const plan: Plan = {
+      dependencies: {},
+      operations: [
+        {
+          type: "create",
+          resource: "skill",
+          name: "search",
+          params: { display_title: displayTitle, files },
+        },
+      ],
+    };
+
+    const result = await applyPlan(plan, createEmptyState(), mockApiClient());
+    const entry = result.state.resources["skill.search"]!;
+    const expected = computeSkillHash(displayTitle, files);
+    expect(entry.last_applied_hash).toBe(expected);
+  });
+
+  test("S-8: skill update hash matches planner computeSkillHash", async () => {
+    const displayTitle = "Search Tool";
+    const oldFiles = [{ path: "SKILL.md", content: "# Skill" }];
+    const oldHash = computeSkillHash(displayTitle, oldFiles);
+
+    const state: StateFile = {
+      version: 1,
+      resources: {
+        "skill.search": {
+          type: "skill",
+          logical_name: "search",
+          id: "skill_123",
+          depends_on: [],
+          latest_version: "v1",
+          display_title: displayTitle,
+          created_at: "2026-04-20T10:00:00Z",
+          last_applied_hash: oldHash,
+        },
+      },
+    };
+
+    const newFiles = [{ path: "SKILL.md", content: "# Updated" }];
+    const plan: Plan = {
+      dependencies: {},
+      operations: [
+        {
+          type: "update",
+          resource: "skill",
+          name: "search",
+          id: "skill_123",
+          params: { files: newFiles },
+        },
+      ],
+    };
+
+    const result = await applyPlan(plan, state, mockApiClient());
+    const entry = result.state.resources["skill.search"]!;
+    const expected = computeSkillHash(displayTitle, newFiles);
+    expect(entry.last_applied_hash).toBe(expected);
   });
 
   test("S-6: depends_on stored in state entry", async () => {
