@@ -1,6 +1,6 @@
 {
   "name": "@agup/cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Declarative CLI for managing Claude Managed Agents resources",
   "author": "Speria Inc.",
   "license": "MIT",
